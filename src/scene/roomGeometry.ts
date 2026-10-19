@@ -5,6 +5,7 @@
 // thickest of the rooms that share it). At junctions, walls running along x own the
 // corner squares and walls running along z stop at their faces, so no two wall faces
 // are coplanar (which would flicker).
+import { openingSpan } from '../editor/openings'
 import { roomRect } from '../editor/roomTool'
 import type { Room } from '../types/design'
 
@@ -120,4 +121,73 @@ export function layoutWalls(rooms: Room[]): WallPiece[] {
   })
 
   return [...x, ...z].filter((p) => p.to - p.from > EPS)
+}
+
+/** A solid block of wall, in metres; y measured up from the floor. */
+export interface WallBox {
+  axis: Axis
+  line: number
+  from: number
+  to: number
+  bottom: number
+  top: number
+  thickness: number
+  roomId: string
+}
+
+/**
+ * The floor's walls as solid boxes with door and window holes cut out. Each merged wall
+ * piece is split at every opening edge along its length; under an opening only the parts
+ * below the sill and above the head remain. An opening on a shared wall cuts both rooms.
+ */
+export function layoutWallBoxes(rooms: Room[]): WallBox[] {
+  const spans = rooms.flatMap((room) => room.openings.map((o) => openingSpan(room, o)))
+  const boxes: WallBox[] = []
+
+  for (const piece of layoutWalls(rooms)) {
+    const holes = spans.filter((s) => s.axis === piece.axis && Math.abs(s.line - piece.line) < EPS && s.to > piece.from + EPS && s.from < piece.to - EPS)
+    const solid = (from: number, to: number, bottom: number, top: number) => {
+      if (to - from > EPS && top - bottom > EPS) boxes.push({ axis: piece.axis, line: piece.line, from, to, bottom, top, thickness: piece.thickness, roomId: piece.roomId })
+    }
+    if (holes.length === 0) {
+      solid(piece.from, piece.to, 0, piece.height)
+      continue
+    }
+    const cuts = [...new Set([piece.from, piece.to, ...holes.flatMap((h) => [h.from, h.to]).filter((v) => v > piece.from && v < piece.to)])].sort((a, b) => a - b)
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const [a, b] = [cuts[i], cuts[i + 1]]
+      const over = holes.filter((h) => h.from <= a + EPS && h.to >= b - EPS)
+      if (over.length === 0) {
+        solid(a, b, 0, piece.height)
+        continue
+      }
+      // Solid where no hole covers: below the lowest sill and above the highest head
+      // (overlapping holes on the same stretch merge into one).
+      const bottom = Math.min(...over.map((h) => h.bottom))
+      const top = Math.max(...over.map((h) => h.top))
+      solid(a, b, 0, bottom)
+      solid(a, b, top, piece.height)
+    }
+  }
+  return mergeAdjacentBoxes(boxes)
+}
+
+/** Joins boxes that continue each other along the same wall with the same height band. */
+function mergeAdjacentBoxes(boxes: WallBox[]): WallBox[] {
+  const out: WallBox[] = []
+  for (const box of boxes) {
+    const last = out.at(-1)
+    if (
+      last &&
+      last.axis === box.axis &&
+      last.line === box.line &&
+      last.thickness === box.thickness &&
+      last.bottom === box.bottom &&
+      last.top === box.top &&
+      Math.abs(last.to - box.from) < EPS
+    ) {
+      last.to = box.to
+    } else out.push({ ...box })
+  }
+  return out
 }

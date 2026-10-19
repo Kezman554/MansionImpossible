@@ -6,6 +6,7 @@ import { Viewport } from '../scene/Viewport'
 import { useSettingsStore } from '../store/settingsStore'
 import { EditorTopBar } from './EditorTopBar'
 import { Inspector } from './Inspector'
+import { OpeningTray } from './OpeningTray'
 import { SaveBanner } from './SaveBanner'
 import { SettingsDialog } from './SettingsDialog'
 import { StatusBar } from './StatusBar'
@@ -40,6 +41,7 @@ export function Editor({ onBack }: EditorProps) {
         <ToolRail />
         <main className="editor__viewport">
           <Viewport quality={quality} showFps={showFps} camera={camera} onCursor={onCursor} />
+          <OpeningTray />
         </main>
         <Inspector />
       </div>

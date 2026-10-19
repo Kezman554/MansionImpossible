@@ -2,8 +2,8 @@
 // so it can be saved to IndexedDB, exported, imported and checked later.
 // All positions and sizes are in real-world metres (1 unit = 1 m); angles in radians.
 
-/** v2: rooms gained wallThickness and type. */
-export const DESIGN_SCHEMA_VERSION = 2
+/** v2: rooms gained wallThickness and type. v3: openings gained style. */
+export const DESIGN_SCHEMA_VERSION = 3
 
 /** [x, y, z] in metres. y is up. */
 export type Vec3 = [number, number, number]
@@ -33,14 +33,22 @@ export interface Floor {
   height: number
 }
 
+/** North is the room's -z side, east its +x side. */
 export type WallSide = 'north' | 'east' | 'south' | 'west'
+
+export type OpeningStyle = 'single-door' | 'double-door' | 'window' | 'glass-wall'
 
 /** A door or window cut into one of a room's walls. */
 export interface Opening {
   id: string
+  /** Kept in step with style: doors have no sill. */
   type: 'door' | 'window'
+  style: OpeningStyle
   wall: WallSide
-  /** Distance from the wall's start to the opening's centre, in metres. */
+  /**
+   * Distance along the wall from its start to the opening's centre, in metres. North and
+   * south walls start at the room's west end, east and west walls at its north end.
+   */
   offset: number
   width: number
   height: number

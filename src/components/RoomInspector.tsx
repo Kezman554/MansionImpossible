@@ -1,51 +1,20 @@
-import type { KeyboardEvent } from 'react'
 import { deleteSelection } from '../editor/deleteSelection'
+import { reattachOpenings, refitOpenings } from '../editor/openings'
 import { placementFromRect, ROOM_LIMITS, ROOM_TYPES, roomRect } from '../editor/roomTool'
 import { useDesignStore, type ObjectPatch } from '../store/designStore'
 import type { Room } from '../types/design'
+import { onFieldKeys, round2 } from './fieldKeys'
 import { BinIcon } from './icons'
+import { NumberField } from './NumberField'
 
-const round2 = (v: number) => Math.round(v * 100) / 100
+function openingSummary(room: Room): string {
+  const doors = room.openings.filter((o) => o.type === 'door').length
+  const windows = room.openings.length - doors
+  if (!room.openings.length) return 'None — use the Door or Window tool'
+  return [doors && `${doors} door${doors === 1 ? '' : 's'}`, windows && `${windows} window${windows === 1 ? '' : 's'}`].filter(Boolean).join(' · ')
+}
+
 const clamp = (v: number, { min, max }: { min: number; max: number }) => Math.min(max, Math.max(min, v))
-
-/**
- * Commits on Enter or blur (one undo step per edit), Escape puts the value back.
- * Uncontrolled and keyed on the value, so undo or a drag in the viewport refreshes it.
- */
-function onFieldKeys(e: KeyboardEvent<HTMLInputElement>, original: string) {
-  if (e.key === 'Enter') e.currentTarget.blur()
-  if (e.key === 'Escape') {
-    e.currentTarget.value = original
-    e.currentTarget.blur()
-  }
-}
-
-interface NumberFieldProps {
-  label: string
-  value: number
-  onCommit: (value: number) => void
-}
-
-function NumberField({ label, value, onCommit }: NumberFieldProps) {
-  const text = String(round2(value))
-  return (
-    <label className="field">
-      <span className="field__label">{label}</span>
-      <input
-        key={text}
-        className="field__input"
-        inputMode="decimal"
-        defaultValue={text}
-        onKeyDown={(e) => onFieldKeys(e, text)}
-        onBlur={(e) => {
-          const parsed = Number(e.currentTarget.value.replace(',', '.'))
-          if (!Number.isFinite(parsed) || e.currentTarget.value.trim() === '') e.currentTarget.value = text
-          else if (round2(parsed) !== round2(value)) onCommit(parsed)
-        }}
-      />
-    </label>
-  )
-}
 
 /** Name, type label, size and wall settings for one selected room. */
 export function RoomInspector({ room, floorName }: { room: Room; floorName: string }) {
@@ -54,11 +23,14 @@ export function RoomInspector({ room, floorName }: { room: Room; floorName: stri
   const [width, height, length] = room.size
   const types: readonly string[] = ROOM_TYPES.includes(room.type as (typeof ROOM_TYPES)[number]) ? ROOM_TYPES : [room.type, ...ROOM_TYPES]
 
+  // Wall height and thickness change how much room openings have; re-fit them in the same undo step.
+  const refit = (patch: Pick<Room, 'size'> | Pick<Room, 'wallThickness'>) => update({ ...patch, openings: refitOpenings({ ...room, ...patch }) })
+
   // Width and length grow or shrink from the north-west corner, so edges on the grid stay on it.
   const resize = (axis: 'x' | 'z', value: number) => {
     const side = round2(clamp(value, ROOM_LIMITS.side))
     const next = axis === 'x' ? { ...rect, x1: rect.x0 + side } : { ...rect, z1: rect.z0 + side }
-    update(placementFromRect(next, height, room.position[1]))
+    update({ ...placementFromRect(next, height, room.position[1]), openings: reattachOpenings(room, rect, next) })
   }
 
   return (
@@ -91,8 +63,14 @@ export function RoomInspector({ room, floorName }: { room: Room; floorName: stri
         <div className="field-grid">
           <NumberField label="Width" value={width} onCommit={(v) => resize('x', v)} />
           <NumberField label="Length" value={length} onCommit={(v) => resize('z', v)} />
-          <NumberField label="Wall height" value={height} onCommit={(v) => update({ size: [width, round2(clamp(v, ROOM_LIMITS.wallHeight)), length] })} />
-          <NumberField label="Wall thickness" value={room.wallThickness} onCommit={(v) => update({ wallThickness: round2(clamp(v, ROOM_LIMITS.wallThickness)) })} />
+          <NumberField label="Wall height" value={height} onCommit={(v) => refit({ size: [width, round2(clamp(v, ROOM_LIMITS.wallHeight)), length] })} />
+          <NumberField label="Wall thickness" value={room.wallThickness} onCommit={(v) => refit({ wallThickness: round2(clamp(v, ROOM_LIMITS.wallThickness)) })} />
+        </div>
+      </section>
+      <section className="inspector__section">
+        <div className="inspector__fact">
+          <span>Openings</span>
+          <span className="inspector__muted">{openingSummary(room)}</span>
         </div>
       </section>
       <div className="inspector__actions">

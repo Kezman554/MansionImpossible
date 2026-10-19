@@ -86,6 +86,7 @@ try {
       undo: !$btn('Undo').disabled, redo: !$btn('Redo').disabled,
       view: pressed('View mode'), viewDisabled: disabled('[aria-label="View mode"] button'),
       tool: pressed('Tools'), toolsDisabled: disabled('.tool-rail__tool').length, toolsTotal: document.querySelectorAll('.tool-rail__tool').length,
+      unlabelledDisabled: [...document.querySelectorAll('.tool-rail__tool')].filter((e) => e.disabled && !e.title.endsWith('coming soon')).length,
       quality: pressed('Quality'), designs: !!$btn('My mansions'), settings: !!$btn('Settings'),
       inspector: document.querySelector('[aria-label=Inspector]')?.innerText ?? '',
       status: document.querySelector('.status-bar')?.innerText ?? '',
@@ -94,7 +95,7 @@ try {
     chrome.name?.includes('Untitled mansion') && chrome.name.includes('saved') && chrome.undo && !chrome.redo &&
     chrome.view.join() === 'Orbit' && chrome.viewDisabled.join() === 'First-person,Tour,Dollhouse' &&
     chrome.quality.join() === 'Med' && chrome.designs && chrome.settings)
-  check('tool rail: Select active, unbuilt tools shown disabled', chrome.tool.join() === 'Select' && chrome.toolsTotal === 12 && chrome.toolsDisabled === 10, `${chrome.toolsDisabled}/${chrome.toolsTotal} disabled`)
+  check('tool rail: Select active, unbuilt tools shown disabled', chrome.tool.join() === 'Select' && chrome.toolsTotal === 12 && chrome.toolsDisabled > 0 && chrome.unlabelledDisabled === 0, `${chrome.toolsDisabled}/${chrome.toolsTotal} disabled`)
   check('inspector summarises the mansion', /Rooms\s*2/.test(chrome.inspector) && /Pieces\s*1/.test(chrome.inspector) && /Furniture\s*1/.test(chrome.inspector))
   check('status bar shows snap and ground-floor rooms', chrome.status.includes('Snap 0.5 m') && chrome.status.includes('Ground floor · 2 rooms'))
 

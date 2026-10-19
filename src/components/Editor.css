@@ -350,3 +350,88 @@
   margin-top: auto;
   padding: 14px 16px;
 }
+
+.inspector__title {
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+}
+
+.inspector__note {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.inspector__muted {
+  color: var(--text-secondary);
+}
+
+.field__input:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+/* Catalogue tray: the one floating panel allowed along the bottom of the viewport */
+.tray {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.tray__head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.tray__title {
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+}
+
+.tray__hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.tray__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.tray__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 64px;
+  border: none;
+  border-radius: var(--radius-tile);
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tray__tile .icon {
+  color: var(--text-secondary);
+  stroke-width: 1.6;
+}
+
+.tray__tile[aria-pressed='true'] {
+  box-shadow: var(--ring-selected);
+}
+
+.tray__tile[aria-pressed='true'] .icon {
+  color: var(--accent);
+}

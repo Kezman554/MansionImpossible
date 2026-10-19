@@ -24,5 +24,17 @@ export function migrateDesign(design: Loose): Design {
     current = { ...current, rooms, version: 2 }
   }
 
+  // v2 → v3: openings gained style.
+  if (current.version === 2) {
+    const rooms = (current.rooms as Loose[]).map((room) => ({
+      ...room,
+      openings: ((room.openings as Loose[] | undefined) ?? []).map((o) => ({
+        ...o,
+        style: typeof o.style === 'string' ? o.style : o.type === 'window' ? 'window' : 'single-door',
+      })),
+    }))
+    current = { ...current, rooms, version: 3 }
+  }
+
   return current as unknown as Design
 }

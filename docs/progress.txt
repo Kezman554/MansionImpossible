@@ -34,3 +34,11 @@
 - Design schema v2 (rooms gained wallThickness, type); v1 designs and JSON migrate on load
 - Placeholder boxes removed (pieces and furniture don't render until their builders exist); grid fades with distance via a small shader
 - Materials catalogue at src/editor/catalog/materials.ts (the literal check exempts src/editor/*catalog*)
+
+2026-10-19 — Doors and windows
+- Door (D) and Window (W) tools: hover a wall to preview, click to place; bottom catalogue tray picks the style (single door, double door, window, floor-to-ceiling glass). On a shared wall the opening belongs to the room on the side clicked
+- Openings are cut into the merged walls (layoutWallBoxes): solid below sills and above heads, once through shared walls; leaves, frames, mullions and glass fill the holes (merged per material)
+- Select an opening to edit style, width, height, sill (doors fixed at 0) and position; drag it to slide along its wall (one undo step); Delete with Undo toast
+- Resizing keeps openings in place in the world on their own wall, clamped inside the corners (reattachOpenings); wall height/thickness edits re-fit them
+- Design schema v3 (openings gained style), migrated from v2
+- Overlapping openings are allowed (no rules) and merge into one hole

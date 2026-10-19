@@ -2,6 +2,7 @@ import { Line } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Vector3, type Group } from 'three'
+import { reattachOpenings } from '../editor/openings'
 import { HANDLES, handlePoint, placementFromRect, resizeRect, roomRect, type Handle, type Rect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
@@ -20,6 +21,8 @@ const outline = (r: Rect, y: number): [number, number, number][] => [
 interface ResizeDrag {
   handle: Handle
   rect: Rect
+  /** The room as it was when the drag began: openings are re-placed from here each move. */
+  room: Room
   checkpointed: boolean
 }
 
@@ -48,7 +51,7 @@ function RoomSelection({ room, elevation }: { room: Room; elevation: number }) {
   const onDown = (handle: Handle) => (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return
     e.stopPropagation()
-    drag.current = { handle, rect, checkpointed: false }
+    drag.current = { handle, rect, room, checkpointed: false }
     setOrbit(false)
     ;(e.target as unknown as Element).setPointerCapture(e.pointerId)
   }
@@ -59,7 +62,8 @@ function RoomSelection({ room, elevation }: { room: Room; elevation: number }) {
     e.stopPropagation()
     const p = pointAtHeight(e.ray, elevation + top)
     if (!p) return
-    const next = placementFromRect(resizeRect(d.rect, d.handle, p), room.size[1], room.position[1])
+    const nextRect = resizeRect(d.rect, d.handle, p)
+    const next = { ...placementFromRect(nextRect, room.size[1], room.position[1]), openings: reattachOpenings(d.room, d.rect, nextRect) }
     const store = useDesignStore.getState()
     const current = store.design.rooms.find((r) => r.id === room.id)
     if (!current || (next.position.every((v, i) => v === current.position[i]) && next.size.every((v, i) => v === current.size[i]))) return

@@ -5,9 +5,9 @@ import { isTextEntry } from '../store/historyShortcuts'
 import { deleteSelection } from './deleteSelection'
 
 type KeyLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'>
-export type EditorAction = 'select-tool' | 'room-tool' | 'escape' | 'delete'
+export type EditorAction = 'select-tool' | 'room-tool' | 'door-tool' | 'window-tool' | 'escape' | 'delete'
 
-/** V = select tool, R = room tool, Escape = cancel / deselect, Delete or Backspace = delete selection. */
+/** V select, R room, D door, W window, Escape = cancel / deselect, Delete or Backspace = delete selection. */
 export function editorActionFor(event: KeyLike): EditorAction | null {
   if (event.ctrlKey || event.metaKey || event.altKey || isTextEntry(event.target)) return null
   switch (event.key) {
@@ -17,6 +17,12 @@ export function editorActionFor(event: KeyLike): EditorAction | null {
     case 'r':
     case 'R':
       return 'room-tool'
+    case 'd':
+    case 'D':
+      return 'door-tool'
+    case 'w':
+    case 'W':
+      return 'window-tool'
     case 'Escape':
       return 'escape'
     case 'Delete':
@@ -32,8 +38,11 @@ export function runEditorAction(action: EditorAction): void {
   const design = useDesignStore.getState()
   if (action === 'select-tool') editor.setTool('select')
   else if (action === 'room-tool') editor.setTool('room')
+  else if (action === 'door-tool') editor.setTool('door')
+  else if (action === 'window-tool') editor.setTool('window')
   else if (action === 'delete') deleteSelection()
   else if (editor.draft) editor.setDraft(null)
+  else if (editor.selectedOpening) editor.selectOpening(null)
   else if (design.selection.length > 0) design.clearSelection()
   else editor.setTool('select')
 }

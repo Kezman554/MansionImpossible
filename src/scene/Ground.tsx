@@ -24,7 +24,9 @@ export function Ground({ plotSize, onCursor }: GroundProps) {
   }
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
-    if (useEditorStore.getState().tool === 'select' && e.delta <= CLICK_TOLERANCE_PX) useDesignStore.getState().clearSelection()
+    if (useEditorStore.getState().tool !== 'select' || e.delta > CLICK_TOLERANCE_PX) return
+    useDesignStore.getState().clearSelection()
+    useEditorStore.getState().selectOpening(null)
   }
 
   return (

@@ -8,6 +8,7 @@ import { FpsProbe } from './FpsProbe'
 import { Ground } from './Ground'
 import { GroundGrid } from './GroundGrid'
 import { Lighting } from './Lighting'
+import { OpeningOverlay } from './OpeningOverlay'
 import { overlayTokens } from './overlayTokens'
 import { QUALITY_PRESETS } from './quality'
 import { RoomDraft } from './RoomDrawing'
@@ -57,7 +58,8 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
         <Rooms />
         <RoomDraft />
         <SelectionOverlay />
-        <EditorCamera state={camera} plotSize={plotSize} leftButtonOrbits={tool === 'select'} />
+        <OpeningOverlay />
+        <EditorCamera state={camera} plotSize={plotSize} leftButtonOrbits={tool !== 'room'} />
         {showFps && <FpsProbe onSample={onFps} />}
       </Canvas>
       {showFps && (

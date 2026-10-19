@@ -1,4 +1,6 @@
 import { useDesignStore } from '../store/designStore'
+import { useEditorStore } from '../store/editorStore'
+import { OpeningInspector } from './OpeningInspector'
 import { plural } from './formatEdited'
 import { RoomInspector } from './RoomInspector'
 
@@ -6,7 +8,19 @@ import { RoomInspector } from './RoomInspector'
 export function Inspector() {
   const design = useDesignStore((s) => s.design)
   const selection = useDesignStore((s) => s.selection)
+  const openingRef = useEditorStore((s) => s.selectedOpening)
   const room = selection.length === 1 ? design.rooms.find((r) => r.id === selection[0]) : undefined
+
+  // An opening is selected inside its room; after an undo it may no longer exist.
+  const openingRoom = openingRef ? design.rooms.find((r) => r.id === openingRef.roomId) : undefined
+  const opening = openingRoom?.openings.find((o) => o.id === openingRef?.openingId)
+  if (openingRoom && opening) {
+    return (
+      <aside aria-label="Inspector" className="inspector">
+        <OpeningInspector key={opening.id} room={openingRoom} opening={opening} />
+      </aside>
+    )
+  }
 
   if (room) {
     const floorName = design.floors.find((f) => f.index === room.floor)?.name ?? `Floor ${room.floor}`
