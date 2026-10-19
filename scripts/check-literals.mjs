@@ -1,11 +1,14 @@
-// Portable form of DESIGN.md's TS/TSX enforcement check:
-//   grep -rnE "#[0-9a-fA-F]{3,8}\b|rgba?\(" src --include=*.ts --include=*.tsx \
-//     | grep -vE "src/scene/overlayTokens.ts|src/editor/.*catalog"
-// Prints matches as file:line:text and exits 1 if there are any; silent otherwise.
+// Portable form of DESIGN.md's TS/TSX enforcement check (keep the two in step).
+// Catches colour literals, quoted font values that aren't var(...), and numeric
+// radii (borderRadius / border-*-radius). Prints matches as file:line:text and
+// exits 1 if there are any; silent otherwise.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
 
-const LITERAL = /#[0-9a-fA-F]{3,8}\b|rgba?\(/
+const COLOUR = String.raw`#[0-9a-fA-F]{3,8}\b|rgba?\(`
+const FONT = String.raw`\b(font|fontFamily)\s*:\s*['"]([^v'"]|v[^a])`
+const RADIUS = String.raw`\b[bB]order\w*Radius\s*:\s*['"]?[0-9.]|border(-[a-z]+)*-radius\s*:\s*[0-9.]`
+const LITERAL = new RegExp(`${COLOUR}|${FONT}|${RADIUS}`)
 const ALLOWED = /src\/scene\/overlayTokens.ts|src\/editor\/.*catalog/
 
 function* walk(dir) {

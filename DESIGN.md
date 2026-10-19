@@ -58,9 +58,9 @@ Shadows and dims are tinted toward ground (`#02100F` / `#03100F`), never black.
 
 ## Enforcement
 - No colour, font or radius literal outside `src/styles/tokens.css` (chrome) and `src/scene/overlayTokens.ts` (overlay colours Three.js needs as values). Material/catalogue colours are design data and live in their catalogues
-- CSS: stylelint with `declaration-strict-value` on `color`, `background`, `background-color`, `border`, `border-color`, `outline`, `box-shadow`, `fill`, `stroke`, `font`, `font-family`, `border-radius` — `var(` passes, literals fail
-- TS/TSX: `grep -rnE "#[0-9a-fA-F]{3,8}\b|rgba?\(" src --include=*.ts --include=*.tsx | grep -vE "src/scene/overlayTokens.ts|src/editor/.*catalog"` prints nothing
-- Both checks proven both ways: silent on the real code, and each catches one planted literal of each kind
+- CSS (`npm run lint:tokens`): stylelint with `declaration-strict-value` on `color`, `background`, `background-color`, `border`, `border-color`, `outline`, `box-shadow`, `fill`, `stroke`, `font`, `font-family`, `border-radius` — `var(` passes, literals fail
+- TS/TSX (`npm run check:literals`, a portable Node port of this grep — keep the two in step): `grep -rnE "#[0-9a-fA-F]{3,8}\b|rgba?\(|\b(font|fontFamily)\s*:\s*['\"]([^v'\"]|v[^a])|\b[bB]order\w*Radius\s*:\s*['\"]?[0-9.]|border(-[a-z]+)*-radius\s*:\s*[0-9.]" src --include=*.ts --include=*.tsx | grep -vE "src/scene/overlayTokens.ts|src/editor/.*catalog"` prints nothing. It catches colour literals, quoted `font`/`fontFamily` values that aren't `var(...)`, and numeric radii (`borderRadius`, `border*Radius`, `border-*-radius` in template CSS)
+- Both checks proven both ways: silent on the real code, and each catches one planted literal of each kind (colour, quoted font name, px radius)
 - No UI-kit defaults inherited: no component library theme; tokens are CSS custom properties defined once
 
 ## Icon

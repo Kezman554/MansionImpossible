@@ -33,7 +33,7 @@ Built with Vite + React + TypeScript (PWA), React Three Fiber (Three.js) + drei,
 
 ## Design
 - Read DESIGN.md before any UI work — its palette is for the chrome and editor overlays, never scene materials
-- No colour, font or radius literal outside `src/styles/tokens.css` and `src/scene/overlayTokens.ts`; check with stylelint (`declaration-strict-value`) and `grep -rnE "#[0-9a-fA-F]{3,8}\b|rgba?\(" src --include=*.ts --include=*.tsx | grep -vE "src/scene/overlayTokens.ts|src/editor/.*catalog"`
+- No colour, font or radius literal outside `src/styles/tokens.css` and `src/scene/overlayTokens.ts`; check with `npm run lint:tokens` (CSS) and `npm run check:literals` (TS/TSX) — both defined in DESIGN.md's Enforcement section
 
 ## Reference
 - Requirements: docs/mansion-impossible_PRD.md
