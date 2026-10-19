@@ -3,11 +3,13 @@ import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import { overlayTokens } from './overlayTokens'
 import { useRoomDrawing } from './useRoomDrawing'
-import { CLICK_TOLERANCE_PX } from './workPlane'
+import { CLICK_TOLERANCE_PX, pointAtHeight } from './workPlane'
 
 interface GroundProps {
   plotSize: [number, number]
-  /** Ground-plane point under the pointer, in metres; null when it leaves the plot. */
+  /** Height of the active floor: the cursor position is read on its plane. */
+  elevation: number
+  /** Point under the pointer on the active floor's plane, in metres; null when it leaves the plot. */
   onCursor: (point: { x: number; z: number } | null) => void
 }
 
@@ -15,11 +17,11 @@ interface GroundProps {
  * Flat stand-in for the terrain: catches shadows, reports the cursor position,
  * takes room-tool drags, and clears the selection when clicked with the select tool.
  */
-export function Ground({ plotSize, onCursor }: GroundProps) {
+export function Ground({ plotSize, elevation, onCursor }: GroundProps) {
   const drawing = useRoomDrawing()
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
-    onCursor({ x: e.point.x, z: e.point.z })
+    onCursor(pointAtHeight(e.ray, elevation))
     drawing.onPointerMove(e)
   }
 

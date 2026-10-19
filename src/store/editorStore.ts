@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { OPENING_STYLES } from '../editor/openings'
 import type { Rect } from '../editor/roomTool'
 import type { Opening, OpeningStyle } from '../types/design'
+import { useDesignStore } from './designStore'
 
 export type Tool = 'select' | 'room' | 'door' | 'window'
 
@@ -14,8 +15,10 @@ export interface OpeningRef {
 /** Editor UI state: not part of the design, not undoable, not saved. */
 interface EditorState {
   tool: Tool
-  /** Floor index new rooms are drawn on. */
+  /** The floor being edited: building tools only affect it; floors above hide. */
   activeFloor: number
+  /** How floors below the active one show. */
+  belowFloors: 'ghost' | 'hide'
   /** The rectangle being drawn with the room tool, if any. */
   draft: Rect | null
   /** True while a room or opening is being moved or resized. */
@@ -26,6 +29,9 @@ interface EditorState {
   openingPreview: { roomId: string; opening: Opening } | null
   selectedOpening: OpeningRef | null
   setTool: (tool: Tool) => void
+  /** Switches the floor being edited; clears the selection, which belonged to the old floor. */
+  setActiveFloor: (index: number) => void
+  setBelowFloors: (mode: 'ghost' | 'hide') => void
   setDraft: (draft: Rect | null) => void
   setDragging: (dragging: boolean) => void
   setOpeningStyle: (style: OpeningStyle) => void
@@ -38,6 +44,7 @@ const DEFAULT_STYLE = { door: 'single-door', window: 'window' } as const
 export const useEditorStore = create<EditorState>()((set, get) => ({
   tool: 'select',
   activeFloor: 0,
+  belowFloors: 'ghost',
   draft: null,
   dragging: false,
   openingStyle: 'single-door',
@@ -50,6 +57,12 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     if ((tool === 'door' || tool === 'window') && OPENING_STYLES[openingStyle].type !== tool) openingStyle = DEFAULT_STYLE[tool]
     set({ tool, draft: null, openingPreview: null, openingStyle })
   },
+  setActiveFloor: (activeFloor) => {
+    if (activeFloor === get().activeFloor) return
+    useDesignStore.getState().clearSelection()
+    set({ activeFloor, selectedOpening: null, openingPreview: null, draft: null })
+  },
+  setBelowFloors: (belowFloors) => set({ belowFloors }),
   setDraft: (draft) => set({ draft }),
   setDragging: (dragging) => set({ dragging }),
   setOpeningStyle: (openingStyle) => {

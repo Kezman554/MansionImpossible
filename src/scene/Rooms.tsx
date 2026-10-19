@@ -1,11 +1,14 @@
+import { Line } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
 import { BoxGeometry, BufferGeometry, PlaneGeometry } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { materialFor, MATERIALS, OPENING_MATERIALS } from '../editor/catalog/materials'
 import { roomRect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
+import { useEditorStore } from '../store/editorStore'
 import type { Room } from '../types/design'
 import { openingFills, type FillMaterial } from './openingFills'
+import { overlayTokens } from './overlayTokens'
 import { layoutWallBoxes, type WallBox } from './roomGeometry'
 import { useRoomPointer } from './useRoomPointer'
 import { elevationOf } from './workPlane'
@@ -99,10 +102,44 @@ function FloorRooms({ floor, elevation, rooms }: { floor: number; elevation: num
   )
 }
 
-/** All rooms, floor by floor: floor slabs, merged walls with openings, door and window fills, ceilings. */
+/**
+ * A floor below the one being edited, ghosted: see-through walls and slabs in the overlay
+ * ghost colour with dashed outlines (DESIGN.md: ghosted floors, dashed). Takes no pointer events.
+ */
+function GhostFloor({ elevation, rooms }: { elevation: number; rooms: Room[] }) {
+  const walls = useMemo(() => mergeByKey(layoutWallBoxes(rooms).map((b): [string, BufferGeometry] => ['walls', boxGeometry(b)])), [rooms])
+  useEffect(() => () => walls.forEach((g) => g.geometry.dispose()), [walls])
+
+  return (
+    <group position-y={elevation} name="ghost-floor">
+      {walls.map(({ key, geometry }) => (
+        <mesh key={key} geometry={geometry} raycast={noRaycast} renderOrder={-1}>
+          <meshBasicMaterial color={overlayTokens.ghost} transparent opacity={0.12} depthWrite={false} toneMapped={false} />
+        </mesh>
+      ))}
+      {rooms.map((room) => {
+        const r = roomRect(room)
+        const loop = (y: number): [number, number, number][] => [[r.x0, y, r.z0], [r.x1, y, r.z0], [r.x1, y, r.z1], [r.x0, y, r.z1], [r.x0, y, r.z0]]
+        return (
+          <group key={room.id}>
+            <Line points={loop(SLAB.top)} color={overlayTokens.ghost} lineWidth={1} dashed dashSize={0.3} gapSize={0.2} transparent opacity={0.8} raycast={noRaycast} />
+            <Line points={loop(room.size[1])} color={overlayTokens.ghost} lineWidth={1} dashed dashSize={0.3} gapSize={0.2} transparent opacity={0.8} raycast={noRaycast} />
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+/**
+ * All rooms, floor by floor. The active floor is drawn in full and takes pointer events;
+ * floors above it are hidden; floors below are ghosted or hidden (the gauge's toggle).
+ */
 export function Rooms() {
   const rooms = useDesignStore((s) => s.design.rooms)
   const floors = useDesignStore((s) => s.design.floors)
+  const activeFloor = useEditorStore((s) => s.activeFloor)
+  const belowFloors = useEditorStore((s) => s.belowFloors)
   const byFloor = useMemo(() => {
     const groups = new Map<number, Room[]>()
     for (const room of rooms) groups.set(room.floor, [...(groups.get(room.floor) ?? []), room])
@@ -111,9 +148,15 @@ export function Rooms() {
 
   return (
     <>
-      {byFloor.map(([floor, floorRooms]) => (
-        <FloorRooms key={floor} floor={floor} elevation={elevationOf(floors, floor)} rooms={floorRooms} />
-      ))}
+      {byFloor.map(([floor, floorRooms]) => {
+        if (floor > activeFloor || (floor < activeFloor && belowFloors === 'hide')) return null
+        const elevation = elevationOf(floors, floor)
+        return floor === activeFloor ? (
+          <FloorRooms key={floor} floor={floor} elevation={elevation} rooms={floorRooms} />
+        ) : (
+          <GhostFloor key={floor} elevation={elevation} rooms={floorRooms} />
+        )
+      })}
     </>
   )
 }

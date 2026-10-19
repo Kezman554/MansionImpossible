@@ -42,3 +42,9 @@
 - Resizing keeps openings in place in the world on their own wall, clamped inside the corners (reattachOpenings); wall height/thickness edits re-fit them
 - Design schema v3 (openings gained style), migrated from v2
 - Overlapping openings are allowed (no rules) and merge into one hole
+
+2026-10-19 — Floors
+- src/editor/floors.ts: add above / basement below, remove (with everything on it; floors beyond close the gap; ground floor replaced by the one above), rename, set height (restacks elevations; full-height rooms follow, openings re-fitted). Indexes stay contiguous with ground at 0. designStore.applyDesign makes each a single undo step
+- Floor gauge (top-left of the viewport, per the canvas): tube with the active floor in coral, rows to switch, + Floor above / + Basement, active row edits name and height and removes (Undo toast); Below: Ghost / Hide
+- Scene: active floor solid and interactive; floors above hidden; floors below ghosted (overlay-ghost, dashed outlines, no pointer events) or hidden. Grid, drawing plane, cursor and camera follow the active floor; new rooms take the floor's height. Page Up / Page Down switch floors
+- Switching floors clears the selection; undo/redo that removes the active floor moves to the nearest remaining one

@@ -9,6 +9,7 @@ export function Inspector() {
   const design = useDesignStore((s) => s.design)
   const selection = useDesignStore((s) => s.selection)
   const openingRef = useEditorStore((s) => s.selectedOpening)
+  const activeFloor = useEditorStore((s) => s.activeFloor)
   const room = selection.length === 1 ? design.rooms.find((r) => r.id === selection[0]) : undefined
 
   // An opening is selected inside its room; after an undo it may no longer exist.
@@ -45,7 +46,7 @@ export function Inspector() {
       <section className="inspector__section">
         <div className="inspector__eyebrow">{selection.length ? `${plural(selection.length, 'object')} selected` : 'Nothing selected'}</div>
         <p className="inspector__hint">
-          {design.rooms.length === 0 ? 'Draw a room with the Room tool (R): drag a rectangle on the grid.' : 'Click a room to edit it here.'}
+          {design.rooms.some((r) => r.floor === activeFloor) ? 'Click a room to edit it here.' : 'Draw a room on this floor with the Room tool (R): drag a rectangle on the grid.'}
         </p>
       </section>
       <section className="inspector__section">

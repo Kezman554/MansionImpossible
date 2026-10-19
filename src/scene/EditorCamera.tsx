@@ -13,6 +13,8 @@ interface EditorCameraProps {
   /** Shared across Canvas remounts (a quality change), so the view doesn't jump. */
   state: CameraState
   plotSize: [number, number]
+  /** Height of the active floor: switching floors lifts or lowers the view by the difference. */
+  floorElevation: number
   /** False while a drawing tool owns the left button; right-drag pan and wheel zoom still work. */
   leftButtonOrbits: boolean
 }
@@ -20,7 +22,7 @@ interface EditorCameraProps {
 const NO_ACTION = -1 as MOUSE
 
 /** Orbit camera: left-drag rotates, right-drag pans, wheel zooms toward the cursor. */
-export function EditorCamera({ state, plotSize, leftButtonOrbits }: EditorCameraProps) {
+export function EditorCamera({ state, plotSize, floorElevation, leftButtonOrbits }: EditorCameraProps) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
   const camera = useThree((s) => s.camera)
 
@@ -29,6 +31,20 @@ export function EditorCamera({ state, plotSize, leftButtonOrbits }: EditorCamera
     controls.current?.target.copy(state.target)
     controls.current?.update()
   }, [camera, state])
+
+  // Follow the active floor up and down, keeping the same angle and distance.
+  const shownElevation = useRef(floorElevation)
+  useEffect(() => {
+    const delta = floorElevation - shownElevation.current
+    shownElevation.current = floorElevation
+    const c = controls.current
+    if (!c || delta === 0) return
+    c.target.y += delta
+    c.object.position.y += delta
+    c.update()
+    state.position.copy(c.object.position)
+    state.target.copy(c.target)
+  }, [floorElevation, state])
 
   const onChange = () => {
     const c = controls.current

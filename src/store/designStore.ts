@@ -72,6 +72,11 @@ export interface DesignState {
   removeObjects: (ids: string | string[]) => void
   select: (ids: string | string[], options?: { additive?: boolean }) => void
   clearSelection: () => void
+  /**
+   * Replaces the whole design with an edited copy as one undo step — for changes that touch
+   * several collections at once, such as removing a floor and everything on it.
+   */
+  applyDesign: (next: Design, options?: EditOptions) => void
   /** Records the current design as an undo step without changing it. */
   checkpoint: () => void
   undo: () => void
@@ -156,6 +161,13 @@ export const useDesignStore = create<DesignState>()((set, get) => ({
   },
 
   clearSelection: () => set({ selection: [] }),
+
+  applyDesign: (next, options) => {
+    set((state) => {
+      if (next === state.design) return {}
+      return { ...edit(state, next, options), selection: pruneSelection(next, state.selection) }
+    })
+  },
 
   checkpoint: () => set((state) => edit(state, state.design)),
 

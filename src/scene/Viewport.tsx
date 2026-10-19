@@ -11,6 +11,7 @@ import { Lighting } from './Lighting'
 import { OpeningOverlay } from './OpeningOverlay'
 import { overlayTokens } from './overlayTokens'
 import { QUALITY_PRESETS } from './quality'
+import { elevationOf } from './workPlane'
 import { RoomDraft } from './RoomDrawing'
 import { Rooms } from './Rooms'
 import { SelectionOverlay } from './SelectionOverlay'
@@ -35,6 +36,8 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
   const preset = QUALITY_PRESETS[quality]
   const plotSize = useDesignStore((s) => s.design.terrain.size)
   const tool = useEditorStore((s) => s.tool)
+  const activeFloor = useEditorStore((s) => s.activeFloor)
+  const elevation = useDesignStore((s) => elevationOf(s.design.floors, activeFloor))
   const fps = useRef<HTMLSpanElement>(null)
 
   const onFps = (value: number) => {
@@ -53,13 +56,13 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
       >
         <color attach="background" args={[overlayTokens.ground]} />
         <Lighting shadows={preset.shadows} plotSize={plotSize} />
-        <Ground plotSize={plotSize} onCursor={onCursor} />
-        <GroundGrid plotSize={plotSize} />
+        <Ground plotSize={plotSize} elevation={elevation} onCursor={onCursor} />
+        <GroundGrid plotSize={plotSize} elevation={elevation} />
         <Rooms />
         <RoomDraft />
         <SelectionOverlay />
         <OpeningOverlay />
-        <EditorCamera state={camera} plotSize={plotSize} leftButtonOrbits={tool !== 'room'} />
+        <EditorCamera state={camera} plotSize={plotSize} floorElevation={elevation} leftButtonOrbits={tool !== 'room'} />
         {showFps && <FpsProbe onSample={onFps} />}
       </Canvas>
       {showFps && (

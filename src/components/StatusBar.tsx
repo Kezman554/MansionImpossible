@@ -15,8 +15,9 @@ const formatHour = (hours: number) => `${String(Math.floor(hours)).padStart(2, '
 
 export function StatusBar({ cursorRef }: StatusBarProps) {
   const settings = useDesignStore((s) => s.design.settings)
-  const floor = useDesignStore((s) => s.design.floors.find((f) => f.index === 0))
-  const groundRooms = useDesignStore((s) => s.design.rooms.filter((r) => r.floor === 0).length)
+  const activeFloor = useEditorStore((s) => s.activeFloor)
+  const floor = useDesignStore((s) => s.design.floors.find((f) => f.index === activeFloor))
+  const floorRooms = useDesignStore((s) => s.design.rooms.filter((r) => r.floor === activeFloor).length)
   const draft = useEditorStore((s) => s.draft)
   const dragging = useEditorStore((s) => s.dragging)
   const dragged = useDesignStore((s) => (s.selection.length === 1 ? s.design.rooms.find((r) => r.id === s.selection[0]) : undefined))
@@ -29,7 +30,7 @@ export function StatusBar({ cursorRef }: StatusBarProps) {
         Cursor <span ref={cursorRef}>–</span>
       </span>
       <span>
-        {floor?.name ?? 'Ground floor'} · {plural(groundRooms, 'room')}
+        {floor?.name ?? 'Ground floor'} · {plural(floorRooms, 'room')}
       </span>
       {live && <span className="status-bar__live">Room {formatSize(live)}</span>}
       <label className="status-bar__time" title="Day/night cycle — coming soon">

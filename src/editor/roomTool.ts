@@ -65,13 +65,14 @@ export function nextRoomName(rooms: Pick<Room, 'name'>[]): string {
   return `Room ${n}`
 }
 
-export function newRoom(rect: Rect, floor: number, existing: Pick<Room, 'name'>[]): NewObject {
+/** A new room on a floor; its walls are the floor's height unless given. */
+export function newRoom(rect: Rect, floor: number, existing: Pick<Room, 'name'>[], wallHeight = DEFAULT_WALL_HEIGHT): NewObject {
   return {
     kind: 'room',
     name: nextRoomName(existing),
     type: DEFAULT_ROOM_TYPE,
     floor,
-    ...placementFromRect(rect, DEFAULT_WALL_HEIGHT),
+    ...placementFromRect(rect, wallHeight),
     wallThickness: DEFAULT_WALL_THICKNESS,
     openings: [],
     materials: { floor: null, walls: null, ceiling: null },

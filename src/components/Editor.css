@@ -435,3 +435,185 @@
 .tray__tile[aria-pressed='true'] .icon {
   color: var(--accent);
 }
+
+/* Floor gauge: the floor switcher, top-left of the viewport (DESIGN.md) */
+.gauge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  gap: 12px;
+  width: 232px;
+  max-height: calc(100% - 28px);
+  padding: 12px;
+  overflow-y: auto;
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.gauge__tube {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 22px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--ring-water);
+}
+
+.gauge__segment {
+  min-height: 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--water) 30%, transparent);
+}
+
+.gauge__segment--ground {
+  border-bottom: 2px solid var(--water);
+}
+
+.gauge__segment--active {
+  background: var(--accent);
+}
+
+.gauge__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gauge__heading {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.gauge__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gauge__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gauge__row:hover {
+  color: var(--text);
+}
+
+.gauge__row--active {
+  flex-wrap: wrap;
+  padding: 6px 8px 8px;
+  background: var(--raised);
+  color: var(--text);
+  cursor: default;
+}
+
+.gauge__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gauge__name-input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+}
+
+.gauge__status {
+  flex: none;
+  font-size: 11px;
+}
+
+.gauge__status--active {
+  color: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+.gauge__details {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.gauge__details .field {
+  flex: 1;
+}
+
+.gauge__details .field__input {
+  height: 28px;
+}
+
+.gauge__remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--danger);
+  box-shadow: var(--ring-danger);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.gauge__remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.gauge__add {
+  height: 28px;
+  border: var(--border-dashed);
+  border-radius: var(--radius-input);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.gauge__below {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.gauge__below .segmented__option {
+  height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+}

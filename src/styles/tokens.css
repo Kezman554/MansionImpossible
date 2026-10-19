@@ -45,7 +45,9 @@
   --ring-selected: inset 0 0 0 2px var(--accent);
   --ring-danger: inset 0 0 0 1.5px var(--danger);
   --ring-decorative: inset 0 0 0 1px var(--border);
+  --ring-water: inset 0 0 0 1.5px var(--water);
   --focus-outline: 2px solid var(--accent);
+  --border-dashed: 1px dashed var(--border);
 
   /* Type */
   --font-family: 'Bricolage Grotesque', system-ui, sans-serif;

@@ -40,7 +40,8 @@ export function useRoomDrawing() {
     editor.setDraft(null)
     if (!rect) return
     const store = useDesignStore.getState()
-    const id = store.addObject(newRoom(rect, editor.activeFloor, store.design.rooms))
+    const floor = store.design.floors.find((f) => f.index === editor.activeFloor)
+    const id = store.addObject(newRoom(rect, editor.activeFloor, store.design.rooms, floor?.height))
     store.select(id)
   }
 

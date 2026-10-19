@@ -6,6 +6,8 @@ import { overlayTokens } from './overlayTokens'
 
 interface GroundGridProps {
   plotSize: [number, number]
+  /** Height of the active floor: the grid is drawn where building happens. */
+  elevation: number
 }
 
 /** Fade band, in metres from the camera, as multiples of the camera's distance to its target. */
@@ -51,8 +53,8 @@ function fadingLineMaterial(color: string, opacity: number): ShaderMaterial {
 
 const target = new Vector3()
 
-/** 1 m cells, 10 m major lines, over the whole plot; fades with distance. Drawn just above y = 0. */
-export function GroundGrid({ plotSize }: GroundGridProps) {
+/** 1 m cells, 10 m major lines, over the whole plot; fades with distance. Drawn just above the active floor. */
+export function GroundGrid({ plotSize, elevation }: GroundGridProps) {
   const lines = useMemo(() => gridLines(plotSize), [plotSize])
   const minorMaterial = useMemo(() => fadingLineMaterial(overlayTokens.ghost, 0.22), [])
   const majorMaterial = useMemo(() => fadingLineMaterial(overlayTokens.edge, 0.4), [])
@@ -68,7 +70,7 @@ export function GroundGrid({ plotSize }: GroundGridProps) {
   })
 
   return (
-    <group position-y={0.002}>
+    <group position-y={elevation + 0.002}>
       <lineSegments material={minorMaterial}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[lines.minor, 3]} />
