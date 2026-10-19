@@ -1,0 +1,7 @@
+2026-10-19 — Session A: scaffold
+- Vite 8 + React 19 + TS 7 PWA (vite-plugin-pwa, manifest name "Mansion Impossible", icons: [] until the icon round)
+- Deps: three, R3F 9, drei 10, zustand 5, idb 8, vitest 5, @fontsource/bricolage-grotesque (400/500/700, bundled)
+- src/styles/tokens.css holds every DESIGN.md token; src/scene/overlayTokens.ts mirrors overlay/gizmo colours (test keeps them in step)
+- Enforcement: npm run lint:tokens (stylelint declaration-strict-value) and npm run check:literals (Node port of the DESIGN.md grep; cmd.exe has no grep)
+  Proven both ways. Gap: the TS grep only catches colours — font/radius literals in TSX inline styles go uncaught
+- App.tsx: full-screen Canvas on ground, title overlay in chrome tokens

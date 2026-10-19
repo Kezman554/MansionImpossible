@@ -1,0 +1,56 @@
+/*
+ * Mansion Impossible design tokens — the only place chrome colour, font and
+ * radius literals may live (see DESIGN.md). Dark is the only mode.
+ * Overlay colours Three.js needs as values live in src/scene/overlayTokens.ts.
+ */
+@import '@fontsource/bricolage-grotesque/400.css';
+@import '@fontsource/bricolage-grotesque/500.css';
+@import '@fontsource/bricolage-grotesque/700.css';
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --ground: #051a1e;
+  --surface: #072328;
+  --raised: #0c2f35;
+  --border: #1b4850;
+
+  /* Text */
+  --text: #e3f5f2;
+  --text-secondary: #86b3ad;
+
+  /* Meaning */
+  --accent: #ff8e6e;
+  --on-accent: #2b0e06;
+  --water: #39c6d6;
+  --positive: #7ee0a8;
+  --danger: #ff8fa8;
+  --on-danger: #2e0812;
+
+  /* Editor overlays (mirrored in src/scene/overlayTokens.ts) */
+  --overlay-edge: #8fd3cb;
+  --overlay-ghost: #5e9a96;
+  --gizmo-x: #ff6b6b;
+  --gizmo-y: #7ee081;
+  --gizmo-z: #6ba8ff;
+
+  /* Shadows and dims, tinted toward ground — never black */
+  --shadow: #02100f;
+  --dim: #03100f;
+
+  /* Type */
+  --font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* Radii */
+  --radius-panel: 12px;
+  --radius-tile: 10px;
+  --radius-input: 8px;
+  --radius-pill: 9999px;
+
+  /* Spacing */
+  --gap-region: 8px;
+}
