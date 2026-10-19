@@ -4,13 +4,21 @@ import { useEditorStore } from '../store/editorStore'
 import { isTextEntry } from '../store/historyShortcuts'
 import { deleteSelection } from './deleteSelection'
 import { stepFloor } from './floorActions'
+import { duplicateSelection } from './freeform/actions'
 
 type KeyLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'>
-export type EditorAction = 'select-tool' | 'room-tool' | 'door-tool' | 'window-tool' | 'floor-up' | 'floor-down' | 'escape' | 'delete'
+export type EditorAction =
+  | 'select-tool' | 'room-tool' | 'door-tool' | 'window-tool' | 'freeform-tool'
+  | 'gizmo-move' | 'gizmo-rotate' | 'gizmo-scale' | 'duplicate'
+  | 'floor-up' | 'floor-down' | 'escape' | 'delete'
 
-/** V select, R room, D door, W window, Page Up/Down = floor, Escape = cancel / deselect, Delete or Backspace = delete selection. */
+/**
+ * V select, R room, D door, W window, F freeform; M / T / S = gizmo move, rotate (turn), scale;
+ * Ctrl+D duplicate; Page Up/Down = floor; Escape = cancel / deselect; Delete or Backspace = delete selection.
+ */
 export function editorActionFor(event: KeyLike): EditorAction | null {
-  if (event.ctrlKey || event.metaKey || event.altKey || isTextEntry(event.target)) return null
+  if (isTextEntry(event.target) || event.altKey) return null
+  if (event.ctrlKey || event.metaKey) return event.key.toLowerCase() === 'd' ? 'duplicate' : null
   switch (event.key) {
     case 'v':
     case 'V':
@@ -24,6 +32,18 @@ export function editorActionFor(event: KeyLike): EditorAction | null {
     case 'w':
     case 'W':
       return 'window-tool'
+    case 'f':
+    case 'F':
+      return 'freeform-tool'
+    case 'm':
+    case 'M':
+      return 'gizmo-move'
+    case 't':
+    case 'T':
+      return 'gizmo-rotate'
+    case 's':
+    case 'S':
+      return 'gizmo-scale'
     case 'PageUp':
       return 'floor-up'
     case 'PageDown':
@@ -45,9 +65,15 @@ export function runEditorAction(action: EditorAction): void {
   else if (action === 'room-tool') editor.setTool('room')
   else if (action === 'door-tool') editor.setTool('door')
   else if (action === 'window-tool') editor.setTool('window')
+  else if (action === 'freeform-tool') editor.setTool('freeform')
+  else if (action === 'gizmo-move') editor.setGizmoMode('translate')
+  else if (action === 'gizmo-rotate') editor.setGizmoMode('rotate')
+  else if (action === 'gizmo-scale') editor.setGizmoMode('scale')
+  else if (action === 'duplicate') duplicateSelection()
   else if (action === 'floor-up') stepFloor(1)
   else if (action === 'floor-down') stepFloor(-1)
   else if (action === 'delete') deleteSelection()
+  else if (editor.piecePreview) editor.setTool('select')
   else if (editor.draft) editor.setDraft(null)
   else if (editor.selectedOpening) editor.selectOpening(null)
   else if (design.selection.length > 0) design.clearSelection()

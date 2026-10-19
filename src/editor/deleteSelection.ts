@@ -1,6 +1,7 @@
 import { useAppStore } from '../store/appStore'
 import { findObject, useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
+import { pieceLabel } from './freeform/catalog'
 import { OPENING_STYLES } from './openings'
 
 const offerUndo = (label: string) =>
@@ -28,5 +29,5 @@ export function deleteSelection(): void {
   if (objects.length === 0) return
   store.removeObjects(objects.map((o) => o.id))
   const only = objects.length === 1 ? objects[0] : null
-  offerUndo(only && 'name' in only ? only.name : `${objects.length} objects`)
+  offerUndo(!only ? `${objects.length} objects` : 'name' in only ? only.name : only.kind === 'piece' ? pieceLabel(only.type) : 'Furniture')
 }

@@ -12,6 +12,8 @@ import { OpeningOverlay } from './OpeningOverlay'
 import { overlayTokens } from './overlayTokens'
 import { QUALITY_PRESETS } from './quality'
 import { elevationOf } from './workPlane'
+import { PieceGizmo } from './PieceGizmo'
+import { Pieces } from './Pieces'
 import { RoomDraft } from './RoomDrawing'
 import { Rooms } from './Rooms'
 import { SelectionOverlay } from './SelectionOverlay'
@@ -59,6 +61,8 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
         <Ground plotSize={plotSize} elevation={elevation} onCursor={onCursor} />
         <GroundGrid plotSize={plotSize} elevation={elevation} />
         <Rooms />
+        <Pieces />
+        <PieceGizmo />
         <RoomDraft />
         <SelectionOverlay />
         <OpeningOverlay />

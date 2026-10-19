@@ -11,6 +11,7 @@ import { EditorTopBar } from './EditorTopBar'
 import { FloorGauge } from './FloorGauge'
 import { Inspector } from './Inspector'
 import { OpeningTray } from './OpeningTray'
+import { PieceTray } from './PieceTray'
 import { SaveBanner } from './SaveBanner'
 import { SettingsDialog } from './SettingsDialog'
 import { StatusBar } from './StatusBar'
@@ -59,6 +60,7 @@ export function Editor({ onBack }: EditorProps) {
           <Viewport quality={quality} showFps={showFps} camera={camera} onCursor={onCursor} />
           <FloorGauge />
           <OpeningTray />
+          <PieceTray />
         </main>
         <Inspector />
       </div>

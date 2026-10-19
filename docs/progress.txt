@@ -48,3 +48,11 @@
 - Floor gauge (top-left of the viewport, per the canvas): tube with the active floor in coral, rows to switch, + Floor above / + Basement, active row edits name and height and removes (Undo toast); Below: Ghost / Hide
 - Scene: active floor solid and interactive; floors above hidden; floors below ghosted (overlay-ghost, dashed outlines, no pointer events) or hidden. Grid, drawing plane, cursor and camera follow the active floor; new rooms take the floor's height. Page Up / Page Down switch floors
 - Switching floors clears the selection; undo/redo that removes the active floor moves to the nearest remaining one
+
+2026-10-19 — Freeform pieces
+- src/editor/freeform/: catalog (wall segment, floor panel, dome, glass tube, platform, pillar, arch, ramp), unit geometries (one shared per shape, origin at base centre, so instance scale = size), placement/snap/duplicate/transform maths, actions
+- Freeform tool (F) with a palette tray and Snap toggle (the design's snapToGrid); click places on the active floor or stacked on a piece's top face; one undo step each
+- Pieces render as one InstancedMesh per shape + material per floor (draw calls don't grow with count); floors above hidden, below ghosted like rooms
+- Transform gizmo (drei TransformControls on a proxy, DESIGN.md gizmo colours): M move, T rotate, S scale (scale folds into size); snaps to grid / 15° / 0.1 m; one undo step per drag; multi-select (shift-click) moves together
+- Inspector for a piece (material, position/height, rotation, size, gizmo mode, Duplicate, Delete) and for multi-selection; Ctrl+D duplicates
+- E2E freeform test runs Chrome on the real GPU: Intel UHD held 60 fps orbiting 200 pillars at Medium (falls back to a SKIP on software rendering)

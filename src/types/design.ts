@@ -89,6 +89,8 @@ export type PieceType =
   | 'tube'
   | 'platform'
   | 'pillar'
+  | 'arch'
+  | 'ramp'
   | 'stairs'
   | 'elevator'
   | 'slide'
@@ -97,7 +99,11 @@ export type PieceType =
   | 'bookcase-passage'
   | 'screen-room'
 
-/** A freeform piece placed at any position, rotation and height. */
+/**
+ * A freeform piece placed at any position, rotation and height. Position is the centre of
+ * the piece's base relative to its floor; size is its bounding box before rotation (scale stays
+ * [1, 1, 1] — the scale gizmo changes size).
+ */
 export interface Piece extends Placed {
   kind: 'piece'
   type: PieceType

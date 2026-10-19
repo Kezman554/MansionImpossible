@@ -617,3 +617,24 @@
   padding: 0 10px;
   font-size: 12px;
 }
+
+.field-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tray__snap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.tray__snap input {
+  accent-color: var(--accent);
+}
+
+.tray__tiles--pieces {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}

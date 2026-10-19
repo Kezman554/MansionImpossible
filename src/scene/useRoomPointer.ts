@@ -5,6 +5,7 @@ import { moveRect, placementFromRect, roomAtPoint, roomRect, type Rect } from '.
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Opening, Room } from '../types/design'
+import { gizmoHasPointer } from './gizmoState'
 import { CLICK_TOLERANCE_PX, pointAtHeight } from './workPlane'
 
 interface MoveDrag {
@@ -82,7 +83,7 @@ export function useRoomPointer(floor: number, elevation: number, rooms: Room[]) 
   }
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
-    if (e.button !== 0) return
+    if (e.button !== 0 || gizmoHasPointer()) return
     if (tool() === 'door' || tool() === 'window') {
       if (placementAt(e)) e.stopPropagation()
       return
@@ -166,7 +167,7 @@ export function useRoomPointer(floor: number, elevation: number, rooms: Room[]) 
   }
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
-    if (e.delta > CLICK_TOLERANCE_PX) return
+    if (e.delta > CLICK_TOLERANCE_PX || gizmoHasPointer()) return
     const store = useDesignStore.getState()
     const editor = useEditorStore.getState()
 

@@ -1,6 +1,7 @@
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import { OpeningInspector } from './OpeningInspector'
+import { PieceInspector, SelectionInspector } from './PieceInspector'
 import { plural } from './formatEdited'
 import { RoomInspector } from './RoomInspector'
 
@@ -19,6 +20,23 @@ export function Inspector() {
     return (
       <aside aria-label="Inspector" className="inspector">
         <OpeningInspector key={opening.id} room={openingRoom} opening={opening} />
+      </aside>
+    )
+  }
+
+  const piece = selection.length === 1 ? design.pieces.find((p) => p.id === selection[0]) : undefined
+  if (piece) {
+    const floorName = design.floors.find((f) => f.index === piece.floor)?.name ?? `Floor ${piece.floor}`
+    return (
+      <aside aria-label="Inspector" className="inspector">
+        <PieceInspector key={piece.id} piece={piece} floorName={floorName} />
+      </aside>
+    )
+  }
+  if (selection.length > 1) {
+    return (
+      <aside aria-label="Inspector" className="inspector">
+        <SelectionInspector ids={selection} />
       </aside>
     )
   }

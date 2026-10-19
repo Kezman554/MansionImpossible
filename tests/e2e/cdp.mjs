@@ -4,12 +4,17 @@ import { existsSync, mkdirSync } from 'node:fs'
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export async function launch({ chrome, profile, port }) {
+/**
+ * gpu: render on the machine's real GPU (for frame-rate checks); otherwise Chrome's software
+ * renderer, which is slower but the same everywhere.
+ */
+export async function launch({ chrome, profile, port, gpu = false }) {
   if (!existsSync(chrome)) throw new Error(`Chrome not found at ${chrome} — set CHROME_PATH`)
   mkdirSync(profile, { recursive: true })
   const proc = spawn(chrome, [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-    '--window-size=1440,900', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
+    '--window-size=1440,900',
+    ...(gpu ? ['--enable-gpu', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']),
     '--no-first-run', '--no-default-browser-check', 'about:blank',
   ], { stdio: 'ignore' })
   let targets

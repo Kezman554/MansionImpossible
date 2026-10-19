@@ -2,7 +2,9 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import { overlayTokens } from './overlayTokens'
+import { usePiecePlacement } from './usePiecePlacement'
 import { useRoomDrawing } from './useRoomDrawing'
+import { gizmoHasPointer } from './gizmoState'
 import { CLICK_TOLERANCE_PX, pointAtHeight } from './workPlane'
 
 interface GroundProps {
@@ -19,13 +21,16 @@ interface GroundProps {
  */
 export function Ground({ plotSize, elevation, onCursor }: GroundProps) {
   const drawing = useRoomDrawing()
+  const piecePlacement = usePiecePlacement()
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     onCursor(pointAtHeight(e.ray, elevation))
     drawing.onPointerMove(e)
+    piecePlacement.onPointerMove(e)
   }
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
+    if (gizmoHasPointer() || piecePlacement.onClick(e)) return
     if (useEditorStore.getState().tool !== 'select' || e.delta > CLICK_TOLERANCE_PX) return
     useDesignStore.getState().clearSelection()
     useEditorStore.getState().selectOpening(null)

@@ -1,10 +1,12 @@
 import { create } from 'zustand'
 import { OPENING_STYLES } from '../editor/openings'
 import type { Rect } from '../editor/roomTool'
-import type { Opening, OpeningStyle } from '../types/design'
+import type { PalettePiece } from '../editor/freeform/catalog'
+import type { Opening, OpeningStyle, Piece } from '../types/design'
 import { useDesignStore } from './designStore'
 
-export type Tool = 'select' | 'room' | 'door' | 'window'
+export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform'
+export type GizmoMode = 'translate' | 'rotate' | 'scale'
 
 /** An opening on a room, by id. Openings live inside their room, so they're selected here, not in the design store. */
 export interface OpeningRef {
@@ -28,7 +30,16 @@ interface EditorState {
   /** Where the door or window tool would place an opening right now. */
   openingPreview: { roomId: string; opening: Opening } | null
   selectedOpening: OpeningRef | null
+  /** Piece the freeform tool places. */
+  pieceType: PalettePiece
+  /** Where the freeform tool would place a piece right now. */
+  piecePreview: Pick<Piece, 'type' | 'position' | 'rotation' | 'scale' | 'size'> | null
+  /** What the transform gizmo does to selected pieces. */
+  gizmoMode: GizmoMode
   setTool: (tool: Tool) => void
+  setPieceType: (type: PalettePiece) => void
+  setPiecePreview: (preview: EditorState['piecePreview']) => void
+  setGizmoMode: (mode: GizmoMode) => void
   /** Switches the floor being edited; clears the selection, which belonged to the old floor. */
   setActiveFloor: (index: number) => void
   setBelowFloors: (mode: 'ghost' | 'hide') => void
@@ -50,17 +61,20 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   openingStyle: 'single-door',
   openingPreview: null,
   selectedOpening: null,
+  pieceType: 'pillar',
+  piecePreview: null,
+  gizmoMode: 'translate',
 
   setTool: (tool) => {
     // The door tool places doors and the window tool windows; keep the style in step.
     let { openingStyle } = get()
     if ((tool === 'door' || tool === 'window') && OPENING_STYLES[openingStyle].type !== tool) openingStyle = DEFAULT_STYLE[tool]
-    set({ tool, draft: null, openingPreview: null, openingStyle })
+    set({ tool, draft: null, openingPreview: null, piecePreview: null, openingStyle })
   },
   setActiveFloor: (activeFloor) => {
     if (activeFloor === get().activeFloor) return
     useDesignStore.getState().clearSelection()
-    set({ activeFloor, selectedOpening: null, openingPreview: null, draft: null })
+    set({ activeFloor, selectedOpening: null, openingPreview: null, piecePreview: null, draft: null })
   },
   setBelowFloors: (belowFloors) => set({ belowFloors }),
   setDraft: (draft) => set({ draft }),
@@ -71,4 +85,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
   setOpeningPreview: (openingPreview) => set({ openingPreview }),
   selectOpening: (selectedOpening) => set({ selectedOpening }),
+  setPieceType: (pieceType) => set({ pieceType, tool: 'freeform', piecePreview: null }),
+  setPiecePreview: (piecePreview) => set({ piecePreview }),
+  setGizmoMode: (gizmoMode) => set({ gizmoMode }),
 }))
