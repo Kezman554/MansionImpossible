@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useEditorShortcuts } from '../editor/editorShortcuts'
 import { DEFAULT_CAMERA } from '../scene/cameraLimits'
 import type { CameraState } from '../scene/EditorCamera'
 import { Viewport } from '../scene/Viewport'
@@ -17,6 +18,7 @@ interface EditorProps {
 
 /** The open design: top bar, tool rail, viewport, inspector and status bar (DESIGN.md / canvas C). */
 export function Editor({ onBack }: EditorProps) {
+  useEditorShortcuts()
   const quality = useSettingsStore((s) => s.quality)
   const showFps = useSettingsStore((s) => s.showFps)
   const [settingsOpen, setSettingsOpen] = useState(false)

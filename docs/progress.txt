@@ -26,3 +26,11 @@
 - Scene: orbit camera (rotate/pan/zoom-to-cursor; 1.5–350 m, stops above the horizon, target kept over the plot), 1 m / 10 m grid from overlayTokens (lines split into 10 m pieces — whole plot-length lines were dropped when an end was behind the camera), ambient + one shadow-casting sun, placeholder boxes for rooms/pieces/furniture
 - Quality low/med/high (pixel ratio 1/1.5/2, AA off/on/on, shadows off/1024/2048) and FPS overlay, saved as app settings in IndexedDB (DB v2 adds a settings store); quality change remounts the Canvas, camera view kept
 - npm run test:e2e now runs every tests/e2e/*.e2e.mjs against one dev server (editor test: 26 checks)
+
+2026-10-19 — Room tool
+- Rooms: drag with the room tool (R) to draw, snapped to 0.5 m; footprint = wall centreline; floor slab, merged walls, down-facing ceilings; editable wall height/thickness, name and type label in the inspector
+- Shared walls merged in src/scene/roomGeometry.ts: x walls own corners, z walls have x-wall bands cut out (no overlaps; property + 300 random-layout tests). Mixed-thickness junctions can leave a small notch
+- Select (V): click selects, drag a selected room to move, handles resize (handles only with the select tool); moves/resizes are one undo step; Delete key or inspector button deletes with an Undo toast (Saved toasts never replace it)
+- Design schema v2 (rooms gained wallThickness, type); v1 designs and JSON migrate on load
+- Placeholder boxes removed (pieces and furniture don't render until their builders exist); grid fades with distance via a small shader
+- Materials catalogue at src/editor/catalog/materials.ts (the literal check exempts src/editor/*catalog*)

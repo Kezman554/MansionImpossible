@@ -1,5 +1,6 @@
 // JSON export / import of a single design, for backups.
 import { DESIGN_SCHEMA_VERSION, type Design } from '../types/design'
+import { migrateDesign, OLDEST_SUPPORTED_VERSION } from './migrateDesign'
 
 export class DesignFileError extends Error {}
 
@@ -42,10 +43,10 @@ export function parseDesign(text: string): Design {
     throw new DesignFileError("This file isn't valid JSON")
   }
   if (!isRecord(data)) throw new DesignFileError("This file isn't a Mansion Impossible design")
-  if (data.version !== DESIGN_SCHEMA_VERSION) {
-    throw new DesignFileError(
-      isNumber(data.version) ? `Design version ${data.version} isn't supported by this app` : "This file isn't a Mansion Impossible design",
-    )
+  const version = data.version
+  if (!isNumber(version)) throw new DesignFileError("This file isn't a Mansion Impossible design")
+  if ((version as number) < OLDEST_SUPPORTED_VERSION || (version as number) > DESIGN_SCHEMA_VERSION || !Number.isInteger(version)) {
+    throw new DesignFileError(`Design version ${version} isn't supported by this app`)
   }
   for (const key of ['id', 'name', 'createdAt', 'updatedAt']) {
     if (!isString(data[key])) throw new DesignFileError(`"${key}" is missing`)
@@ -59,7 +60,7 @@ export function parseDesign(text: string): Design {
     throw new DesignFileError('"terrain" is missing or invalid')
   }
   if (!isRecord(data.settings)) throw new DesignFileError('"settings" is missing')
-  return data as unknown as Design
+  return migrateDesign(data)
 }
 
 /** Downloads the design as a .json file. */

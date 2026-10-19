@@ -1,6 +1,7 @@
 import { Canvas, type RootState } from '@react-three/fiber'
 import { useRef } from 'react'
 import { useDesignStore } from '../store/designStore'
+import { useEditorStore } from '../store/editorStore'
 import type { Quality } from '../types/appSettings'
 import { EditorCamera, type CameraState } from './EditorCamera'
 import { FpsProbe } from './FpsProbe'
@@ -8,8 +9,10 @@ import { Ground } from './Ground'
 import { GroundGrid } from './GroundGrid'
 import { Lighting } from './Lighting'
 import { overlayTokens } from './overlayTokens'
-import { PlaceholderObjects } from './PlaceholderObjects'
 import { QUALITY_PRESETS } from './quality'
+import { RoomDraft } from './RoomDrawing'
+import { Rooms } from './Rooms'
+import { SelectionOverlay } from './SelectionOverlay'
 
 interface ViewportProps {
   quality: Quality
@@ -30,6 +33,7 @@ function exposeForDev({ get }: RootState) {
 export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) {
   const preset = QUALITY_PRESETS[quality]
   const plotSize = useDesignStore((s) => s.design.terrain.size)
+  const tool = useEditorStore((s) => s.tool)
   const fps = useRef<HTMLSpanElement>(null)
 
   const onFps = (value: number) => {
@@ -37,7 +41,7 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
   }
 
   return (
-    <div className="viewport" data-quality={quality}>
+    <div className={`viewport viewport--${tool}`} data-quality={quality}>
       <Canvas
         key={quality}
         dpr={[1, preset.maxPixelRatio]}
@@ -50,8 +54,10 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
         <Lighting shadows={preset.shadows} plotSize={plotSize} />
         <Ground plotSize={plotSize} onCursor={onCursor} />
         <GroundGrid plotSize={plotSize} />
-        <PlaceholderObjects />
-        <EditorCamera state={camera} plotSize={plotSize} />
+        <Rooms />
+        <RoomDraft />
+        <SelectionOverlay />
+        <EditorCamera state={camera} plotSize={plotSize} leftButtonOrbits={tool === 'select'} />
         {showFps && <FpsProbe onSample={onFps} />}
       </Canvas>
       {showFps && (

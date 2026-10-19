@@ -169,6 +169,14 @@
   transform: translateX(-50%);
 }
 
+.toast:has(.toast__action) {
+  padding-right: 6px;
+}
+
+.toast__action {
+  height: 32px;
+}
+
 .toast__tick {
   color: var(--positive);
   stroke-width: 2.2;
@@ -232,4 +240,13 @@
   background: var(--accent);
   color: var(--on-accent);
   font-weight: var(--font-weight-bold);
+}
+
+/* Destructive action: wording + bin icon + danger outline, never colour alone (DESIGN.md) */
+.btn--danger-outline {
+  flex: 1;
+  justify-content: center;
+  background: none;
+  color: var(--danger);
+  box-shadow: var(--ring-danger);
 }

@@ -10,6 +10,18 @@ export function ToastHost() {
         <div key={toast.id} className="toast">
           {toast.tone === 'saved' && <TickIcon size={18} className="toast__tick" />}
           {toast.message}
+          {toast.action && (
+            <button
+              type="button"
+              className="btn btn--small btn--primary toast__action"
+              onClick={() => {
+                toast.action?.run()
+                useAppStore.getState().dismissToast(toast.id)
+              }}
+            >
+              {toast.action.label}
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -1,16 +1,19 @@
+import { useEditorStore, type Tool as ToolId } from '../store/editorStore'
 import { ToolIcon } from './icons'
 
 interface Tool {
   id: string
   label: string
   built: boolean
+  /** Keyboard shortcut, shown in the tooltip. */
+  key?: string
 }
 
 // Groups: build, furnish, grounds. Unbuilt tools stay visible but disabled.
 const TOOL_GROUPS: Tool[][] = [
   [
-    { id: 'select', label: 'Select', built: true },
-    { id: 'room', label: 'Room', built: false },
+    { id: 'select', label: 'Select', built: true, key: 'V' },
+    { id: 'room', label: 'Room', built: true, key: 'R' },
     { id: 'door', label: 'Door', built: false },
     { id: 'window', label: 'Window', built: false },
     { id: 'freeform', label: 'Freeform', built: false },
@@ -29,7 +32,7 @@ const TOOL_GROUPS: Tool[][] = [
 ]
 
 export function ToolRail() {
-  const active = 'select'
+  const active = useEditorStore((s) => s.tool)
 
   return (
     <nav aria-label="Tools" className="tool-rail">
@@ -42,7 +45,8 @@ export function ToolRail() {
               className="tool-rail__tool"
               aria-pressed={tool.id === active}
               disabled={!tool.built}
-              title={tool.built ? tool.label : `${tool.label} — coming soon`}
+              title={tool.built ? `${tool.label} (${tool.key})` : `${tool.label} — coming soon`}
+              onClick={() => useEditorStore.getState().setTool(tool.id as ToolId)}
             >
               <ToolIcon tool={tool.id} />
               {tool.label}

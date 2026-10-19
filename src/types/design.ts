@@ -2,7 +2,8 @@
 // so it can be saved to IndexedDB, exported, imported and checked later.
 // All positions and sizes are in real-world metres (1 unit = 1 m); angles in radians.
 
-export const DESIGN_SCHEMA_VERSION = 1
+/** v2: rooms gained wallThickness and type. */
+export const DESIGN_SCHEMA_VERSION = 2
 
 /** [x, y, z] in metres. y is up. */
 export type Vec3 = [number, number, number]
@@ -54,12 +55,21 @@ export interface RoomMaterials {
   ceiling: string | null
 }
 
-/** A rectangle drawn on the grid: walls, floor and ceiling. */
+/**
+ * A rectangle drawn on the grid: walls, floor and ceiling. Rooms are axis-aligned:
+ * position is the centre of the footprint at floor level, and the footprint is the
+ * wall centreline, so touching rooms share walls exactly. Rotation and scale are
+ * kept for the data model but not applied to rooms.
+ */
 export interface Room extends Placed {
   kind: 'room'
   name: string
-  /** Interior size [width (x), height (y), depth (z)] in metres. */
+  /** Free label shown in the inspector, e.g. "Library". */
+  type: string
+  /** [width (x), wall height (y), length (z)] in metres, measured on the wall centreline. */
   size: Vec3
+  /** Wall thickness in metres, centred on the footprint edge. */
+  wallThickness: number
   openings: Opening[]
   materials: RoomMaterials
 }

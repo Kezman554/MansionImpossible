@@ -13,7 +13,8 @@ export function historyActionFor(event: KeyLike): 'undo' | 'redo' | null {
   return null
 }
 
-function isTextEntry(target: EventTarget | null): boolean {
+/** Text fields, selects and contenteditable keep their own keys. */
+export function isTextEntry(target: EventTarget | null): boolean {
   if (!target || typeof HTMLElement === 'undefined' || !(target instanceof HTMLElement)) return false
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
 }

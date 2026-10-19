@@ -71,8 +71,8 @@ try {
   await ready()
   await b.evaluate(`(() => {
     const s = $S();
-    s.addObject({ kind: 'room', name: 'Hall', size: [12, 4, 9], position: [0, 0, 0], openings: [], materials: { floor: null, walls: null, ceiling: null } });
-    s.addObject({ kind: 'room', name: 'Tower', size: [5, 12, 5], position: [10, 0, -8], openings: [], materials: { floor: null, walls: null, ceiling: null } });
+    s.addObject({ kind: 'room', name: 'Hall', type: 'Room', wallThickness: 0.2, size: [12, 4, 9], position: [0, 0, 0], openings: [], materials: { floor: null, walls: null, ceiling: null } });
+    s.addObject({ kind: 'room', name: 'Tower', type: 'Room', wallThickness: 0.2, size: [5, 12, 5], position: [10, 0, -8], openings: [], materials: { floor: null, walls: null, ceiling: null } });
     s.addObject({ kind: 'piece', type: 'fish-tank', size: [3, 9, 3], position: [-9, 0, 6], material: null });
     s.addObject({ kind: 'furniture', catalogId: 'sofa', position: [2, 0, 1], material: null });
     return true })()`)
@@ -94,7 +94,7 @@ try {
     chrome.name?.includes('Untitled mansion') && chrome.name.includes('saved') && chrome.undo && !chrome.redo &&
     chrome.view.join() === 'Orbit' && chrome.viewDisabled.join() === 'First-person,Tour,Dollhouse' &&
     chrome.quality.join() === 'Med' && chrome.designs && chrome.settings)
-  check('tool rail: Select active, unbuilt tools shown disabled', chrome.tool.join() === 'Select' && chrome.toolsTotal === 12 && chrome.toolsDisabled === 11, `${chrome.toolsDisabled}/${chrome.toolsTotal} disabled`)
+  check('tool rail: Select active, unbuilt tools shown disabled', chrome.tool.join() === 'Select' && chrome.toolsTotal === 12 && chrome.toolsDisabled === 10, `${chrome.toolsDisabled}/${chrome.toolsTotal} disabled`)
   check('inspector summarises the mansion', /Rooms\s*2/.test(chrome.inspector) && /Pieces\s*1/.test(chrome.inspector) && /Furniture\s*1/.test(chrome.inspector))
   check('status bar shows snap and ground-floor rooms', chrome.status.includes('Snap 0.5 m') && chrome.status.includes('Ground floor · 2 rooms'))
 

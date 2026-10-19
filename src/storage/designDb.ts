@@ -2,6 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import { createDesign, newId } from '../store/designStore'
 import type { AppSettings } from '../types/appSettings'
 import type { Design } from '../types/design'
+import { migrateDesign } from './migrateDesign'
 
 const DB_NAME = 'mansion-impossible'
 const DB_VERSION = 2
@@ -56,7 +57,8 @@ export async function saveDesign(design: Design): Promise<void> {
 }
 
 export async function getDesign(id: string): Promise<Design | undefined> {
-  return (await db()).get('designs', id)
+  const design = await (await db()).get('designs', id)
+  return design && migrateDesign(design as unknown as Record<string, unknown>)
 }
 
 /** All saved designs, most recently edited first. */
