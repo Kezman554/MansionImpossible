@@ -1,0 +1,38 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-region);
+  height: 100%;
+  padding: 0 var(--gap-region) var(--gap-region);
+  background: var(--surface);
+}
+
+.editor__bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 8px;
+}
+
+.editor__name {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: var(--font-weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor__unsaved {
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.editor__viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--ground);
+}

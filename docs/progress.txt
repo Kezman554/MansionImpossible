@@ -11,3 +11,11 @@
 - src/store/designStore.ts: Zustand store — addObject/updateObject/removeObjects/select, undo/redo with 100-step snapshot history, checkpoint + record:false for drags; selection kept outside history
 - src/store/historyShortcuts.ts: Ctrl/Cmd+Z undo, Ctrl+Y / Ctrl+Shift+Z redo (skipped in text fields), mounted in App
 - tests/designStore.test.ts: 21 tests (add, update, remove, select, undo/redo, limit, shortcuts)
+
+2026-10-19 — Saving and the start screen
+- src/storage/designDb.ts (idb): save/get/list/delete, create (unique "Untitled mansion N"), rename, duplicate, import (fresh id)
+- src/storage/designFile.ts: JSON export/import with validation and readable errors; src/storage/autosave.ts: 800 ms debounce, one save at a time, Saved toast, failure → persistent banner (Export JSON / Try again); leaving the editor is refused while the last save fails
+- DesignManager start screen per the canvas: cards (name, edited date, floor/room counts) with menu (Open, Rename, Duplicate, Export, Delete…), empty state, delete confirm with Export first; Editor shell with back button; open design kept in the URL hash so refresh reopens it
+- New composite tokens (rings, menu shadow, focus outline, backdrop); dev-only window.__mansion exposes the stores
+- Browser-tested via headless Chrome (CDP): two designs reopen intact after refresh; save failure simulated by making IDB put throw QuotaExceededError (Chrome's quota override isn't enforced on an existing DB)
+- Card previews are a placeholder glyph until a thumbnail renderer exists

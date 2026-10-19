@@ -1,0 +1,185 @@
+/* Shared chrome controls: pill buttons, icon buttons, menus, banner, toast. */
+
+:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn--large {
+  height: 44px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+.btn--small {
+  height: 36px;
+  padding: 0 14px;
+}
+
+.btn--on-raised {
+  background: var(--surface);
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn--danger {
+  background: var(--danger);
+  color: var(--on-danger);
+  font-weight: var(--font-weight-bold);
+}
+
+.icon-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-btn[aria-expanded='true'] {
+  background: var(--text);
+  color: var(--surface);
+}
+
+.icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Menus */
+.menu {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  padding: 6px;
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: var(--shadow-menu);
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu__item:hover,
+.menu__item:focus-visible {
+  background: var(--raised);
+}
+
+.menu__item--danger {
+  color: var(--danger);
+}
+
+.menu__divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+/* Save failure banner: persistent, danger outline on a plain panel */
+.save-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-panel);
+  background: var(--raised);
+  box-shadow: var(--ring-danger);
+}
+
+.save-banner__icon {
+  color: var(--danger);
+}
+
+.save-banner__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.save-banner__title {
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+}
+
+.save-banner__detail {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Toasts: bottom centre */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  background: var(--raised);
+  box-shadow: var(--ring-decorative);
+  font-size: 14px;
+  transform: translateX(-50%);
+}
+
+.toast__tick {
+  color: var(--positive);
+  stroke-width: 2.2;
+}
+
+/* Visually hidden but read by screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

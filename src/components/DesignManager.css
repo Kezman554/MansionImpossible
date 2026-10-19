@@ -1,0 +1,262 @@
+.start {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.start__bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 56px;
+  padding: 0 24px;
+}
+
+.start__wordmark {
+  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+}
+
+.start__banner:not(:empty) {
+  padding: 0 64px;
+}
+
+/* Saved designs */
+.start__main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 64px 48px;
+}
+
+.start__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.start__title {
+  margin: 0;
+  font-size: 40px;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.05;
+}
+
+.start__subtitle {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.start__actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.start__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* Card */
+.design-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-panel);
+  background: var(--raised);
+}
+
+.design-card:has(.icon-btn[aria-expanded='true']) {
+  z-index: 1;
+}
+
+.design-card__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 190px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  background: var(--ground);
+  cursor: pointer;
+}
+
+.design-card__preview:hover .design-card__glyph {
+  stroke: var(--water);
+}
+
+.design-card__glyph {
+  width: 64px;
+  height: 80px;
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.design-card__water {
+  fill: var(--border);
+  stroke: none;
+}
+
+.design-card__preview:hover .design-card__water {
+  fill: var(--water);
+  fill-opacity: 0.35;
+}
+
+.design-card__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.design-card__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.design-card__name {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.design-card__rename {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+}
+
+.design-card__meta {
+  color: var(--text-secondary);
+}
+
+.design-card__menu {
+  top: calc(100% - 8px);
+  right: 10px;
+}
+
+/* Empty state */
+.start__empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px 24px 56px;
+  text-align: center;
+}
+
+.start__empty-plot {
+  fill: var(--raised);
+}
+
+.start__empty-tank {
+  fill: var(--water);
+  fill-opacity: 0.12;
+  stroke: var(--water);
+  stroke-width: 2;
+}
+
+.start__empty-rim {
+  fill: none;
+  stroke: var(--water);
+  stroke-width: 2;
+}
+
+.start__empty-water {
+  fill: var(--water);
+  fill-opacity: 0.35;
+}
+
+.start__empty-fish {
+  fill: var(--accent);
+}
+
+.start__empty-title {
+  margin: 0;
+  font-size: 36px;
+  font-weight: var(--font-weight-bold);
+}
+
+.start__empty-text {
+  max-width: 420px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.start__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.start__footnote {
+  margin: 16px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* Delete confirmation */
+.confirm-dialog {
+  width: min(440px, calc(100% - 32px));
+  padding: 22px;
+  border: none;
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--ring-danger);
+}
+
+.confirm-dialog::backdrop {
+  background: var(--backdrop);
+}
+
+.confirm-dialog__title {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+}
+
+.confirm-dialog__body {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.confirm-dialog__confirm {
+  margin-left: auto;
+}

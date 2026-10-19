@@ -38,6 +38,14 @@
   /* Shadows and dims, tinted toward ground — never black */
   --shadow: #02100f;
   --dim: #03100f;
+  --backdrop: color-mix(in srgb, var(--dim) 80%, transparent);
+  --shadow-menu: 0 12px 32px var(--shadow), inset 0 0 0 1px var(--border);
+
+  /* Rings and outlines (a state outline is accent, danger or water — never border) */
+  --ring-selected: inset 0 0 0 2px var(--accent);
+  --ring-danger: inset 0 0 0 1.5px var(--danger);
+  --ring-decorative: inset 0 0 0 1px var(--border);
+  --focus-outline: 2px solid var(--accent);
 
   /* Type */
   --font-family: 'Bricolage Grotesque', system-ui, sans-serif;
