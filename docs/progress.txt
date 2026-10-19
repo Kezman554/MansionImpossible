@@ -5,3 +5,9 @@
 - Enforcement: npm run lint:tokens (stylelint declaration-strict-value) and npm run check:literals (Node port of the DESIGN.md grep; cmd.exe has no grep)
   Proven both ways. check:literals widened to catch font and radius literals in TS/TSX too (DESIGN.md updated)
 - App.tsx: full-screen Canvas on ground, title overlay in chrome tokens
+
+2026-10-19 — Design data model and store
+- src/types/design.ts: serialisable Design (version, floors, rooms, pieces, furniture, terrain heightmap, settings, ISO timestamps); metres, radians; every placed object has id, floor, position, rotation, scale
+- src/store/designStore.ts: Zustand store — addObject/updateObject/removeObjects/select, undo/redo with 100-step snapshot history, checkpoint + record:false for drags; selection kept outside history
+- src/store/historyShortcuts.ts: Ctrl/Cmd+Z undo, Ctrl+Y / Ctrl+Shift+Z redo (skipped in text fields), mounted in App
+- tests/designStore.test.ts: 21 tests (add, update, remove, select, undo/redo, limit, shortcuts)

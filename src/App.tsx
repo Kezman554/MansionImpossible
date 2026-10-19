@@ -1,8 +1,11 @@
 import { Canvas } from '@react-three/fiber'
 import { overlayTokens } from './scene/overlayTokens'
+import { useHistoryShortcuts } from './store/historyShortcuts'
 import './App.css'
 
 function App() {
+  useHistoryShortcuts()
+
   return (
     <div className="app">
       <Canvas className="app__viewport" camera={{ position: [12, 9, 12], fov: 45 }}>
