@@ -6,6 +6,7 @@ import { autosave } from './storage/autosave'
 import { getDesign } from './storage/designDb'
 import { useAppStore } from './store/appStore'
 import { useHistoryShortcuts } from './store/historyShortcuts'
+import { useSettingsStore } from './store/settingsStore'
 import './App.css'
 
 // The open design lives in the URL hash, so a refresh reopens it.
@@ -18,6 +19,9 @@ const leaveDesign = () => (location.hash = '')
 function App() {
   useHistoryShortcuts()
   const [screen, setScreen] = useState<'loading' | 'start' | 'editor'>('loading')
+  const settingsLoaded = useSettingsStore((s) => s.loaded)
+
+  useEffect(() => void useSettingsStore.getState().load(), [])
 
   useEffect(() => {
     let openId: string | null = null
@@ -68,7 +72,7 @@ function App() {
   return (
     <div className="app">
       {screen === 'start' && <DesignManager onOpen={openDesign} />}
-      {screen === 'editor' && <Editor onBack={leaveDesign} />}
+      {screen === 'editor' && settingsLoaded && <Editor onBack={leaveDesign} />}
       <ToastHost />
     </div>
   )

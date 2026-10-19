@@ -20,3 +20,9 @@
 - Browser-tested via headless Chrome (CDP): two designs reopen intact after refresh; save failure simulated by making IDB put throw QuotaExceededError (Chrome's quota override isn't enforced on an existing DB)
 - Card previews are a placeholder glyph until a thumbnail renderer exists
 - Browser test: npm run test:e2e (starts or reuses the dev server; set CHROME_PATH, E2E_PORT, E2E_CDP_PORT or E2E_OUT to override; not part of npm test)
+
+2026-10-19 — Editor screen
+- Chrome per canvas C: top bar (name + saved state, undo/redo, view modes, quality, My mansions, settings), tool rail, inspector (mansion summary until selection exists), status bar (snap, live cursor, floor rooms, time of day); unbuilt tools/modes shown disabled
+- Scene: orbit camera (rotate/pan/zoom-to-cursor; 1.5–350 m, stops above the horizon, target kept over the plot), 1 m / 10 m grid from overlayTokens (lines split into 10 m pieces — whole plot-length lines were dropped when an end was behind the camera), ambient + one shadow-casting sun, placeholder boxes for rooms/pieces/furniture
+- Quality low/med/high (pixel ratio 1/1.5/2, AA off/on/on, shadows off/1024/2048) and FPS overlay, saved as app settings in IndexedDB (DB v2 adds a settings store); quality change remounts the Canvas, camera view kept
+- npm run test:e2e now runs every tests/e2e/*.e2e.mjs against one dev server (editor test: 26 checks)

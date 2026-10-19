@@ -28,6 +28,7 @@ describe('design tokens', () => {
       ['overlay-ghost', overlayTokens.ghost],
       ['water', overlayTokens.water],
       ['ground', overlayTokens.ground],
+      ['shadow', overlayTokens.shadow],
       ['gizmo-x', overlayTokens.gizmo.x],
       ['gizmo-y', overlayTokens.gizmo.y],
       ['gizmo-z', overlayTokens.gizmo.z],

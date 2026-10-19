@@ -6,7 +6,7 @@ import { launch, sleep } from './cdp.mjs'
 import { config } from './config.mjs'
 import { ensureDevServer } from './devServer.mjs'
 
-const OUT = config.outDir
+const OUT = join(config.outDir, 'designManager')
 const DOWNLOADS = join(OUT, 'downloads')
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })

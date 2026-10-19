@@ -1,36 +1,48 @@
-import { Canvas } from '@react-three/fiber'
-import { overlayTokens } from '../scene/overlayTokens'
-import { useAppStore } from '../store/appStore'
-import { useDesignStore } from '../store/designStore'
-import { BackIcon } from './icons'
+import { useRef, useState } from 'react'
+import { DEFAULT_CAMERA } from '../scene/cameraLimits'
+import type { CameraState } from '../scene/EditorCamera'
+import { Viewport } from '../scene/Viewport'
+import { useSettingsStore } from '../store/settingsStore'
+import { EditorTopBar } from './EditorTopBar'
+import { Inspector } from './Inspector'
 import { SaveBanner } from './SaveBanner'
+import { SettingsDialog } from './SettingsDialog'
+import { StatusBar } from './StatusBar'
+import { ToolRail } from './ToolRail'
 import './Editor.css'
 
 interface EditorProps {
   onBack: () => void
 }
 
-/** The open design: top bar, save banner (when failing) and the 3D viewport. */
+/** The open design: top bar, tool rail, viewport, inspector and status bar (DESIGN.md / canvas C). */
 export function Editor({ onBack }: EditorProps) {
-  const name = useDesignStore((s) => s.design.name)
-  const unsaved = useAppStore((s) => s.saveProblem !== null)
+  const quality = useSettingsStore((s) => s.quality)
+  const showFps = useSettingsStore((s) => s.showFps)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  // One mutable camera state per open design, shared with the viewport across Canvas remounts.
+  const [camera] = useState<CameraState>(() => ({ position: DEFAULT_CAMERA.position.clone(), target: DEFAULT_CAMERA.target.clone() }))
+  const cursor = useRef<HTMLSpanElement>(null)
+
+  const onCursor = (point: { x: number; z: number } | null) => {
+    if (cursor.current) cursor.current.textContent = point ? `${point.x.toFixed(1)}, ${point.z.toFixed(1)} m` : '–'
+  }
 
   return (
     <div className="editor">
-      <header className="editor__bar">
-        <button type="button" className="btn btn--small" onClick={onBack}>
-          <BackIcon size={14} />
-          My mansions
-        </button>
-        <span className="editor__name">{name}</span>
-        {unsaved && <span className="editor__unsaved">· not saved</span>}
-      </header>
-      <SaveBanner />
-      <div className="editor__viewport">
-        <Canvas camera={{ position: [12, 9, 12], fov: 45 }}>
-          <color attach="background" args={[overlayTokens.ground]} />
-        </Canvas>
+      <EditorTopBar onDesigns={onBack} onSettings={() => setSettingsOpen(true)} />
+      <div className="editor__banner">
+        <SaveBanner />
       </div>
+      <div className="editor__body">
+        <ToolRail />
+        <main className="editor__viewport">
+          <Viewport quality={quality} showFps={showFps} camera={camera} onCursor={onCursor} />
+        </main>
+        <Inspector />
+      </div>
+      <StatusBar cursorRef={cursor} />
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

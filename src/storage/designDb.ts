@@ -1,13 +1,18 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import { createDesign, newId } from '../store/designStore'
+import type { AppSettings } from '../types/appSettings'
 import type { Design } from '../types/design'
 
 const DB_NAME = 'mansion-impossible'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 interface MansionDb extends DBSchema {
   designs: { key: string; value: Design; indexes: { updatedAt: string } }
+  /** App-wide preferences (not part of any design), stored under one key. */
+  settings: { key: string; value: Partial<AppSettings> }
 }
+
+const APP_SETTINGS_KEY = 'app'
 
 /** What the start screen shows per design, without holding every design open. */
 export interface DesignSummary {
@@ -22,9 +27,12 @@ let dbPromise: Promise<IDBPDatabase<MansionDb>> | null = null
 
 function db(): Promise<IDBPDatabase<MansionDb>> {
   dbPromise ??= openDB<MansionDb>(DB_NAME, DB_VERSION, {
-    upgrade(database) {
-      const designs = database.createObjectStore('designs', { keyPath: 'id' })
-      designs.createIndex('updatedAt', 'updatedAt')
+    upgrade(database, oldVersion) {
+      if (oldVersion < 1) {
+        const designs = database.createObjectStore('designs', { keyPath: 'id' })
+        designs.createIndex('updatedAt', 'updatedAt')
+      }
+      if (oldVersion < 2) database.createObjectStore('settings')
     },
   })
   return dbPromise
@@ -98,4 +106,13 @@ export async function importDesign(design: Design): Promise<Design> {
   const imported = { ...design, id: newId(), updatedAt: now() }
   await saveDesign(imported)
   return imported
+}
+
+/** Saved app settings; missing or unknown fields are left for the caller to default. */
+export async function loadAppSettings(): Promise<Partial<AppSettings>> {
+  return (await (await db()).get('settings', APP_SETTINGS_KEY)) ?? {}
+}
+
+export async function saveAppSettings(settings: AppSettings): Promise<void> {
+  await (await db()).put('settings', settings, APP_SETTINGS_KEY)
 }

@@ -11,6 +11,8 @@ export const overlayTokens = {
   water: '#39C6D6',
   /** Viewport background */
   ground: '#051A1E',
+  /** Shadows cast onto the ground, tinted toward ground — never black */
+  shadow: '#02100F',
   gizmo: {
     x: '#FF6B6B',
     y: '#7EE081',

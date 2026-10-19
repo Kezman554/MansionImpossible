@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "node tests/e2e/designManager.e2e.mjs",
+    "test:e2e": "node tests/e2e/run.mjs",
     "lint": "oxlint",
     "lint:tokens": "stylelint \"src/**/*.css\"",
     "check:literals": "node scripts/check-literals.mjs"
