@@ -19,3 +19,4 @@
 - New composite tokens (rings, menu shadow, focus outline, backdrop); dev-only window.__mansion exposes the stores
 - Browser-tested via headless Chrome (CDP): two designs reopen intact after refresh; save failure simulated by making IDB put throw QuotaExceededError (Chrome's quota override isn't enforced on an existing DB)
 - Card previews are a placeholder glyph until a thumbnail renderer exists
+- Browser test: npm run test:e2e (starts or reuses the dev server; set CHROME_PATH, E2E_PORT, E2E_CDP_PORT or E2E_OUT to override; not part of npm test)
