@@ -75,7 +75,7 @@ export function newRoom(rect: Rect, floor: number, existing: Pick<Room, 'name'>[
     ...placementFromRect(rect, wallHeight),
     wallThickness: DEFAULT_WALL_THICKNESS,
     openings: [],
-    materials: { floor: null, walls: null, ceiling: null },
+    materials: { floor: null, walls: null, ceiling: null, faces: {} },
   }
 }
 

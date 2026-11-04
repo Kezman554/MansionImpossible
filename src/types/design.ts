@@ -2,8 +2,11 @@
 // so it can be saved to IndexedDB, exported, imported and checked later.
 // All positions and sizes are in real-world metres (1 unit = 1 m); angles in radians.
 
-/** v2: rooms gained wallThickness and type. v3: openings gained style. v4: the central fish tank. */
-export const DESIGN_SCHEMA_VERSION = 4
+/**
+ * v2: rooms gained wallThickness and type. v3: openings gained style. v4: the central fish tank.
+ * v5: materials — per-face wall materials, custom colours, connectors' toFloor; no 'fish-tank' pieces.
+ */
+export const DESIGN_SCHEMA_VERSION = 5
 
 /** [x, y, z] in metres. y is up. */
 export type Vec3 = [number, number, number]
@@ -56,11 +59,33 @@ export interface Opening {
   sill: number
 }
 
-/** Material ids per surface; ids refer to the materials catalogue. */
+/**
+ * One face of one of a room's walls: 'in' faces into the room, 'out' faces away from it. On a
+ * wall shared by two rooms, each side is the inside face of the room it faces.
+ */
+export type WallFace = `${WallSide}-${'in' | 'out'}`
+
+/**
+ * Material ids per surface; ids refer to the materials catalogue or the design's custom colours.
+ * null = the surface's default.
+ */
 export interface RoomMaterials {
   floor: string | null
+  /** Every wall face without its own material below. */
   walls: string | null
   ceiling: string | null
+  /** Wall faces painted individually (v5). */
+  faces?: Partial<Record<WallFace, string>>
+}
+
+/** A colour the user mixed with the colour picker: a flat scene material saved with the design. */
+export interface CustomMaterial {
+  /** "custom-" + the colour's six hex digits, so one colour is one material. */
+  id: string
+  name: string
+  /** Colour as #rrggbb. */
+  color: string
+  roughness: number
 }
 
 /**
@@ -97,7 +122,6 @@ export type PieceType =
   | 'slide'
   | 'spiral-slide'
   | 'fireman-pole'
-  | 'fish-tank'
   | 'bookcase-passage'
   | 'screen-room'
 
@@ -178,6 +202,8 @@ export interface Design {
   furniture: Furniture[]
   /** The central fish tank, or null when the design has none. */
   tank: FishTank | null
+  /** Colours mixed with the custom colour picker, used by material id like catalogue materials (v5). */
+  customMaterials: CustomMaterial[]
   terrain: Terrain
   settings: DesignSettings
   /** ISO 8601 timestamps. */

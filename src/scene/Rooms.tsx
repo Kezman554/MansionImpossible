@@ -2,15 +2,18 @@ import { Line } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
 import { BoxGeometry, BufferGeometry, ExtrudeGeometry, Path, PlaneGeometry, Shape, ShapeGeometry } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { materialFor, MATERIALS, OPENING_MATERIALS } from '../editor/catalog/materials'
+import { materialFor, OPENING_MATERIALS, resolveMaterial, TANK_MATERIALS } from '../editor/catalog/materials'
 import { openingSpan } from '../editor/openings'
 import { floorHoles, holesInRect } from '../editor/connectors/connectors'
 import { roomRect, type Rect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
-import type { FishTank, Floor, Piece, Room } from '../types/design'
+import type { CustomMaterial, FishTank, Floor, Piece, Room } from '../types/design'
 import { openingFills, type FillMaterial } from './openingFills'
+import { NO_CUSTOM, ghostMaterial, sharedMaterial, sharedMaterialById } from './materialCache'
 import { overlayTokens } from './overlayTokens'
+import { buildWallFaces } from './wallFaces'
+import { worldUVs } from './worldUV'
 import { layoutFloorWalls, onAquarium, type WallBox } from './roomGeometry'
 import { useRoomPointer } from './useRoomPointer'
 import { elevationOf } from './workPlane'
@@ -39,11 +42,6 @@ function mergeByKey<K>(parts: [K, BufferGeometry][]): { key: K; geometry: Buffer
   })
 }
 
-/** One merged geometry per wall material: merged walls with door and window holes cut out. */
-function buildWalls(rooms: Room[], boxes: WallBox[]) {
-  const roomById = new Map(rooms.map((r) => [r.id, r]))
-  return mergeByKey(boxes.map((b): [string, BufferGeometry] => [materialFor(roomById.get(b.roomId)?.materials.walls ?? null, 'walls').id, boxGeometry(b)]))
-}
 
 /** Door leaves, frames and glass, merged per material; none on aquarium walls (they aren't cut). */
 function buildFills(rooms: Room[], aquarium: WallBox[]) {
@@ -57,14 +55,13 @@ function buildAquarium(aquarium: WallBox[]): BufferGeometry | null {
   return aquarium.length ? (mergeByKey(aquarium.map((b): [string, BufferGeometry] => ['aquarium', boxGeometry(b)]))[0]?.geometry ?? null) : null
 }
 
-/** Glass aquarium walls, tinted with the water token (DESIGN.md: water = anything that became aquarium). */
+const aquariumGlass = resolveMaterial(TANK_MATERIALS.glass)!
+const aquariumGhost = { ...aquariumGlass, id: `${aquariumGlass.id}-ghost`, opacity: 0.15 }
+
+/** Glass aquarium walls in the catalogue's aquarium glass (DESIGN.md: water = anything that became aquarium). */
 function AquariumWalls({ geometry, ghost = false }: { geometry: BufferGeometry | null; ghost?: boolean }) {
   if (!geometry) return null
-  return (
-    <mesh name="aquarium" geometry={geometry} renderOrder={2} raycast={ghost ? noRaycast : undefined}>
-      <meshStandardMaterial color={overlayTokens.water} roughness={0.05} metalness={0.1} transparent opacity={ghost ? 0.15 : 0.3} depthWrite={false} />
-    </mesh>
-  )
+  return <mesh name="aquarium" geometry={geometry} renderOrder={2} raycast={ghost ? noRaycast : undefined} material={sharedMaterial(ghost ? aquariumGhost : aquariumGlass)} />
 }
 
 type Plan = [number, number]
@@ -93,11 +90,11 @@ function buildSlab(room: Room, holes: Plan[][]): BufferGeometry {
     ? new ExtrudeGeometry(shapeWithHoles(r, cut, true), { depth: SLAB.top - SLAB.bottom, bevelEnabled: false }).rotateX(-Math.PI / 2).translate(0, SLAB.bottom, 0)
     : new BoxGeometry(r.x1 - r.x0, SLAB.top - SLAB.bottom, r.z1 - r.z0).translate((r.x0 + r.x1) / 2, (SLAB.bottom + SLAB.top) / 2, (r.z0 + r.z1) / 2)
   geometry.userData.holes = cut.length
-  return geometry
+  return worldUVs(geometry)
 }
 
 /** Ceilings face down: seen from inside a room, invisible from above in the editor. Connectors going up cut holes in them. */
-function buildCeilings(rooms: Room[], holes: Plan[][]) {
+function buildCeilings(rooms: Room[], holes: Plan[][], custom: readonly CustomMaterial[]) {
   return mergeByKey(
     rooms.map((room): [string, BufferGeometry] => {
       const r = roomRect(room)
@@ -105,16 +102,11 @@ function buildCeilings(rooms: Room[], holes: Plan[][]) {
       const plane = cut.length
         ? new ShapeGeometry(shapeWithHoles(r, cut, false)).rotateX(Math.PI / 2).translate(0, room.size[1] - 0.001, 0)
         : new PlaneGeometry(r.x1 - r.x0, r.z1 - r.z0).rotateX(Math.PI / 2).translate((r.x0 + r.x1) / 2, room.size[1] - 0.001, (r.z0 + r.z1) / 2)
-      return [materialFor(room.materials.ceiling, 'ceiling').id, plane]
+      return [materialFor(room.materials.ceiling, 'ceiling', custom).id, worldUVs(plane)]
     }),
   )
 }
 
-function SurfaceMaterial({ id }: { id: string }) {
-  const m = MATERIALS[id]
-  const seeThrough = m.opacity !== undefined && m.opacity < 1
-  return <meshStandardMaterial color={m.color} roughness={m.roughness} transparent={seeThrough} opacity={m.opacity ?? 1} depthWrite={!seeThrough} />
-}
 
 interface FloorRoomsProps {
   floor: number
@@ -127,12 +119,14 @@ interface FloorRoomsProps {
 }
 
 function FloorRooms({ floor, elevation, rooms, tank, slabHoles, ceilingHoles }: FloorRoomsProps) {
+  const custom = useDesignStore((s) => s.design.customMaterials ?? NO_CUSTOM)
   // Walls touching the tank are worked out again whenever the rooms or the tank change.
   const layout = useMemo(() => layoutFloorWalls(rooms, tank), [rooms, tank])
-  const walls = useMemo(() => buildWalls(rooms, layout.boxes), [rooms, layout])
+  // Face by face, one geometry per material: painting a face only moves it between groups.
+  const walls = useMemo(() => buildWallFaces(layout.boxes, rooms, custom), [rooms, layout, custom])
   const fills = useMemo(() => buildFills(rooms, layout.aquarium), [rooms, layout])
   const aquarium = useMemo(() => buildAquarium(layout.aquarium), [layout])
-  const ceilings = useMemo(() => buildCeilings(rooms, ceilingHoles), [rooms, ceilingHoles])
+  const ceilings = useMemo(() => buildCeilings(rooms, ceilingHoles, custom), [rooms, ceilingHoles, custom])
   const slabs = useMemo(() => rooms.map((room) => ({ room, geometry: buildSlab(room, slabHoles) })), [rooms, slabHoles])
   useEffect(() => () => [...walls, ...fills, ...ceilings, ...slabs].forEach((g) => g.geometry.dispose()), [walls, fills, ceilings, slabs])
   useEffect(() => () => aquarium?.dispose(), [aquarium])
@@ -141,24 +135,25 @@ function FloorRooms({ floor, elevation, rooms, tank, slabHoles, ceilingHoles }: 
   return (
     <group position-y={elevation} {...pointer}>
       {slabs.map(({ room, geometry }) => (
-        <mesh key={room.id} name="slab" userData={{ roomId: room.id, holes: geometry.userData.holes }} geometry={geometry} castShadow receiveShadow>
-          <SurfaceMaterial id={materialFor(room.materials.floor, 'floor').id} />
-        </mesh>
+        <mesh
+          key={room.id}
+          name="slab"
+          userData={{ roomId: room.id, holes: geometry.userData.holes }}
+          geometry={geometry}
+          material={sharedMaterialById(room.materials.floor, custom, 'oak')}
+          castShadow
+          receiveShadow
+        />
       ))}
       {walls.map(({ key, geometry }) => (
-        <mesh key={key} name="walls" geometry={geometry} castShadow receiveShadow>
-          <SurfaceMaterial id={key} />
-        </mesh>
+        <mesh key={key} name="walls" userData={{ material: key }} geometry={geometry} material={sharedMaterialById(key, custom, 'warm-white')} castShadow receiveShadow />
       ))}
       {fills.map(({ key, geometry }) => (
-        <mesh key={key} name={`opening-${key}`} geometry={geometry} castShadow={key !== 'glass'} receiveShadow={key !== 'glass'}>
-          <SurfaceMaterial id={OPENING_MATERIALS[key]} />
-        </mesh>
+        <mesh key={key} name={`opening-${key}`} geometry={geometry} material={sharedMaterialById(OPENING_MATERIALS[key], custom, 'glass')} castShadow={key !== 'glass'} receiveShadow={key !== 'glass'} />
       ))}
+      {/* Ceilings face down, so they only catch clicks from below (the paint tool). */}
       {ceilings.map(({ key, geometry }) => (
-        <mesh key={key} geometry={geometry} receiveShadow raycast={noRaycast}>
-          <SurfaceMaterial id={key} />
-        </mesh>
+        <mesh key={key} name="ceiling" userData={{ material: key }} geometry={geometry} material={sharedMaterialById(key, custom, 'plaster')} receiveShadow />
       ))}
       <AquariumWalls geometry={aquarium} />
     </group>
@@ -179,9 +174,7 @@ function GhostFloor({ elevation, rooms, tank }: { elevation: number; rooms: Room
   return (
     <group position-y={elevation} name="ghost-floor">
       {walls.map(({ key, geometry }) => (
-        <mesh key={key} geometry={geometry} raycast={noRaycast} renderOrder={-1}>
-          <meshBasicMaterial color={overlayTokens.ghost} transparent opacity={0.12} depthWrite={false} toneMapped={false} />
-        </mesh>
+        <mesh key={key} geometry={geometry} raycast={noRaycast} renderOrder={-1} material={ghostMaterial} />
       ))}
       <AquariumWalls geometry={aquarium} ghost />
       {rooms.map((room) => {

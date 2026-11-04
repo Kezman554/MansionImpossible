@@ -8,6 +8,7 @@ import { useEditorStore } from '../store/editorStore'
 import type { FishTank as Tank, TankShape } from '../types/design'
 import { gizmoHasPointer } from './gizmoState'
 import { overlayTokens } from './overlayTokens'
+import { raycastBelow } from './raycastBelow'
 import { createWaterMaterial, type WaterMaterial } from './waterMaterial'
 import { CLICK_TOLERANCE_PX, elevationOf, pointAtHeight } from './workPlane'
 
@@ -146,11 +147,13 @@ function TankVolume({ tank, caustics }: { tank: Tank; caustics: boolean }) {
   })
 
   const pointer = useTankPointer(tank, elevation)
+  // Floors above are hidden: nothing above the active floor's top catches clicks.
+  const raycast = useMemo(() => raycastBelow(top), [top])
   const [cx, cz] = tank.position
 
   return (
     <group name="fish-tank">
-      <mesh ref={water} name="tank-water" position={[cx, bottom + height / 2, cz]} geometry={geometry} material={material} renderOrder={1} {...pointer}>
+      <mesh ref={water} name="tank-water" position={[cx, bottom + height / 2, cz]} geometry={geometry} material={material} renderOrder={1} raycast={raycast} {...pointer}>
         <Edges threshold={20} color={overlayTokens.water} raycast={noRaycast} />
       </mesh>
       {selected && (

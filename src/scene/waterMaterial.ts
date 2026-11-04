@@ -2,7 +2,7 @@
 // brighter rim where the glass is seen edge-on, and (on High quality only) moving caustic
 // light bands. One draw call, no textures; the caustics are compiled out below High.
 import { Color, FrontSide, ShaderMaterial } from 'three'
-import { overlayTokens } from './overlayTokens'
+import { resolveMaterial, TANK_MATERIALS } from '../editor/catalog/materials'
 
 const vertexShader = /* glsl */ `
   varying vec3 vWorld;
@@ -60,9 +60,12 @@ export interface WaterMaterial extends ShaderMaterial {
   }
 }
 
-/** Water for the tank, tinted with the water token (DESIGN.md's one deliberate crossover). */
+/**
+ * Water for the tank, tinted with the catalogue's tank water (the same colour as the UI water
+ * token: DESIGN.md's one deliberate crossover).
+ */
 export function createWaterMaterial(caustics: boolean): WaterMaterial {
-  const tint = new Color(overlayTokens.water)
+  const tint = new Color(resolveMaterial(TANK_MATERIALS.water)!.color)
   return new ShaderMaterial({
     vertexShader,
     fragmentShader,

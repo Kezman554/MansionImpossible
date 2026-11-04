@@ -13,6 +13,7 @@ import { Inspector } from './Inspector'
 import { OpeningTray } from './OpeningTray'
 import { PieceTray } from './PieceTray'
 import { ConnectorTray } from './ConnectorTray'
+import { PaintTray } from './PaintTray'
 import { SaveBanner } from './SaveBanner'
 import { SettingsDialog } from './SettingsDialog'
 import { StatusBar } from './StatusBar'
@@ -63,6 +64,7 @@ export function Editor({ onBack }: EditorProps) {
           <OpeningTray />
           <PieceTray />
           <ConnectorTray />
+          <PaintTray />
         </main>
         <Inspector />
       </div>

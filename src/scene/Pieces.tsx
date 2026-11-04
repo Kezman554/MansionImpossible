@@ -1,7 +1,6 @@
 import type { ThreeEvent } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { BoxGeometry, DoubleSide, EdgesGeometry, Matrix4, type InstancedMesh, type LineSegments } from 'three'
-import { MATERIALS } from '../editor/catalog/materials'
 import { DOUBLE_SIDED, pieceGeometry } from '../editor/freeform/geometry'
 import { groupForInstancing, pieceMatrix } from '../editor/freeform/pieces'
 import { isConnectorType } from '../editor/connectors/catalog'
@@ -10,6 +9,8 @@ import { ConnectorMesh } from './Connectors'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Piece, PieceType } from '../types/design'
+import { applyPaint } from '../editor/paint'
+import { NO_CUSTOM, ghostMaterial, sharedMaterialById } from './materialCache'
 import { overlayTokens } from './overlayTokens'
 import { gizmoHasPointer } from './gizmoState'
 import { usePiecePlacement } from './usePiecePlacement'
@@ -33,8 +34,9 @@ interface InstancedPiecesProps {
 function InstancedPieces({ type, material, pieces, elevation, ghost }: InstancedPiecesProps) {
   const mesh = useRef<InstancedMesh>(null)
   const placement = usePiecePlacement()
-  const spec = MATERIALS[material ?? ''] ?? MATERIALS.plaster
-  const seeThrough = spec.opacity !== undefined && spec.opacity < 1
+  const custom = useDesignStore((s) => s.design.customMaterials ?? NO_CUSTOM)
+  const shared = sharedMaterialById(material, custom, 'plaster', { doubleSided: DOUBLE_SIDED.has(type) })
+  const seeThrough = shared.transparent
 
   useLayoutEffect(() => {
     const m = mesh.current
@@ -49,6 +51,13 @@ function InstancedPieces({ type, material, pieces, elevation, ghost }: Instanced
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     if (placement.onClick(e, true)) return
+    if (useEditorStore.getState().tool === 'paint' && e.delta <= CLICK_TOLERANCE_PX) {
+      const piece = pieceAt(e)
+      if (!piece) return
+      e.stopPropagation()
+      applyPaint({ kind: 'piece', pieceId: piece.id })
+      return
+    }
     if (useEditorStore.getState().tool !== 'select' || e.delta > CLICK_TOLERANCE_PX || gizmoHasPointer()) return
     const piece = pieceAt(e)
     if (!piece) return
@@ -72,20 +81,8 @@ function InstancedPieces({ type, material, pieces, elevation, ghost }: Instanced
       raycast={ghost ? noRaycast : undefined}
       onClick={ghost ? undefined : onClick}
       onPointerMove={ghost ? undefined : (e) => placement.onPointerMove(e, true)}
-    >
-      {ghost ? (
-        <meshBasicMaterial color={overlayTokens.ghost} transparent opacity={0.12} depthWrite={false} toneMapped={false} />
-      ) : (
-        <meshStandardMaterial
-          color={spec.color}
-          roughness={spec.roughness}
-          transparent={seeThrough}
-          opacity={spec.opacity ?? 1}
-          depthWrite={!seeThrough}
-          side={seeThrough || DOUBLE_SIDED.has(type) ? DoubleSide : undefined}
-        />
-      )}
-    </instancedMesh>
+      material={ghost ? ghostMaterial : shared}
+    />
   )
 }
 

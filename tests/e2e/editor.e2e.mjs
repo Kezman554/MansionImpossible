@@ -73,7 +73,7 @@ try {
     const s = $S();
     s.addObject({ kind: 'room', name: 'Hall', type: 'Room', wallThickness: 0.2, size: [12, 4, 9], position: [0, 0, 0], openings: [], materials: { floor: null, walls: null, ceiling: null } });
     s.addObject({ kind: 'room', name: 'Tower', type: 'Room', wallThickness: 0.2, size: [5, 12, 5], position: [10, 0, -8], openings: [], materials: { floor: null, walls: null, ceiling: null } });
-    s.addObject({ kind: 'piece', type: 'fish-tank', size: [3, 9, 3], position: [-9, 0, 6], material: null });
+    s.addObject({ kind: 'piece', type: 'pillar', size: [3, 9, 3], position: [-9, 0, 6], material: null });
     s.addObject({ kind: 'furniture', catalogId: 'sofa', position: [2, 0, 1], material: null });
     return true })()`)
 

@@ -82,7 +82,7 @@ const TOOL_ICON_PATHS: Record<string, string> = {
   connector: 'M4 20h4v-4h4v-4h4V8h4',
   tank: 'M5 3v18h14V3M5 8c2.3-1.3 4.7-1.3 7 0s4.7 1.3 7 0M9 15l3-2v4zM12 15l3-2v4',
   furnish: 'M4 12V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M3 12h18v5H3zM5 17v2M19 17v2',
-  materials: 'M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7z',
+  paint: 'M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7z',
   lights: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z',
   terrain: 'M2 19l6-9 4 5 3-4 7 8z',
   water: 'M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z',

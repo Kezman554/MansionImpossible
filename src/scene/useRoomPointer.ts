@@ -5,7 +5,9 @@ import { moveRect, placementFromRect, roomAtPoint, roomRect, type Rect } from '.
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Opening, Room } from '../types/design'
+import { applyPaint } from '../editor/paint'
 import { gizmoHasPointer } from './gizmoState'
+import { wallFaceAt } from './wallFaces'
 import { CLICK_TOLERANCE_PX, pointAtHeight } from './workPlane'
 
 interface MoveDrag {
@@ -171,6 +173,10 @@ export function useRoomPointer(floor: number, elevation: number, rooms: Room[]) 
     const store = useDesignStore.getState()
     const editor = useEditorStore.getState()
 
+    if (tool() === 'paint') {
+      paintAt(e)
+      return
+    }
     if (tool() === 'door' || tool() === 'window') {
       const placed = placementAt(e)
       if (!placed) return
@@ -196,6 +202,26 @@ export function useRoomPointer(floor: number, elevation: number, rooms: Room[]) 
     e.stopPropagation()
     editor.selectOpening(null)
     store.select(room.id, { additive: e.shiftKey })
+  }
+
+  /**
+   * Paint tool: the wall face, floor or ceiling under the pointer. Shift-click on a floor paints
+   * the room's ceiling (from above, ceilings face away and can't be clicked).
+   */
+  const paintAt = (e: ThreeEvent<MouseEvent>) => {
+    if (e.delta > CLICK_TOLERANCE_PX) return
+    e.stopPropagation()
+    const name = e.object.name
+    if (name === 'walls' && e.face) {
+      const ref = wallFaceAt(rooms, local(e.point), e.face.normal)
+      if (ref) applyPaint({ kind: 'wall', ...ref })
+    } else if (name === 'slab') {
+      const roomId = e.object.userData.roomId as string
+      applyPaint({ kind: e.shiftKey ? 'ceiling' : 'floor', roomId })
+    } else if (name === 'ceiling') {
+      const room = roomUnder(e)
+      if (room) applyPaint({ kind: 'ceiling', roomId: room.id })
+    }
   }
 
   const onPointerOut = () => {

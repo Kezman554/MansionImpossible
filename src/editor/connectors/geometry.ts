@@ -4,6 +4,7 @@
 // slides drop towards +z. Parts are grouped by material, so each connector is a few draw calls.
 import { BoxGeometry, BufferGeometry, CylinderGeometry, Float32BufferAttribute } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { worldUVs } from '../../scene/worldUV'
 import type { Vec3 } from '../../types/design'
 import type { ConnectorType } from './catalog'
 import { SLIDE_RUNOUT, stepCount, STEP_GOING } from './connectors'
@@ -147,6 +148,8 @@ function merge(parts: BufferGeometry[]): BufferGeometry {
 export function connectorParts(type: ConnectorType, size: Vec3, material: string): ConnectorPart[] {
   const parts = build(type, size, material)
   for (const { geometry } of parts) {
+    // Metres across each face, so textured materials tile at their real size.
+    worldUVs(geometry)
     geometry.computeBoundingBox()
     geometry.computeBoundingSphere()
   }

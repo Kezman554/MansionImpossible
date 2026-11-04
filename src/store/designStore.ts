@@ -48,6 +48,7 @@ export function createDesign(name: string): Design {
     pieces: [],
     furniture: [],
     tank: null,
+    customMaterials: [],
     terrain: { size: [200, 200], resolution, heights: new Array<number>(resolution * resolution).fill(0) },
     settings: { gridSize: 0.5, snapToGrid: true, timeOfDay: 12 },
     createdAt: timestamp,

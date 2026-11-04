@@ -22,11 +22,13 @@ const GIZMO_MODES: { value: GizmoMode; label: string }[] = [
 ]
 
 function MaterialSelect({ value, onChange }: { value: string | null; onChange: (id: string) => void }) {
+  const custom = useDesignStore((s) => s.design.customMaterials)
+  const options = [...Object.values(MATERIALS).filter((m) => !m.hidden), ...(custom ?? [])]
   return (
     <label className="field field--inline">
       <span className="field__label">Material</span>
       <select className="field__input field__select" value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
-        {Object.values(MATERIALS).map((m) => (
+        {options.map((m) => (
           <option key={m.id} value={m.id}>
             {m.name}
           </option>

@@ -1,7 +1,6 @@
 import type { ThreeEvent } from '@react-three/fiber'
-import { useEffect, useMemo } from 'react'
-import { DoubleSide, Plane, Vector3 } from 'three'
-import { MATERIALS } from '../editor/catalog/materials'
+import { useEffect, useLayoutEffect, useMemo } from 'react'
+import { DoubleSide, MeshBasicMaterial } from 'three'
 import type { ConnectorType } from '../editor/connectors/catalog'
 import { connectorFloors, connectorSize, isConnector } from '../editor/connectors/connectors'
 import { connectorParts } from '../editor/connectors/geometry'
@@ -9,10 +8,14 @@ import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Floor, Piece, Vec3 } from '../types/design'
 import { gizmoHasPointer } from './gizmoState'
+import { applyPaint } from '../editor/paint'
+import { activeFloorClip, NO_CUSTOM, ghostMaterial, sharedMaterialById } from './materialCache'
 import { overlayTokens } from './overlayTokens'
+import { raycastBelow } from './raycastBelow'
 import { CLICK_TOLERANCE_PX, elevationOf } from './workPlane'
 
 const noRaycast = () => null
+const previewMaterial = new MeshBasicMaterial({ color: overlayTokens.selection, transparent: true, opacity: 0.3, depthWrite: false, toneMapped: false, side: DoubleSide })
 type Look = { kind: 'solid'; clipTop: number } | { kind: 'ghost' } | { kind: 'preview' }
 
 /** Geometry for one connector at its fitted size; rebuilt only when its shape changes. */
@@ -25,6 +28,11 @@ function useParts(type: ConnectorType, size: Vec3, material: string) {
 }
 
 function selectPiece(e: ThreeEvent<MouseEvent>, piece: Piece) {
+  if (useEditorStore.getState().tool === 'paint' && e.delta <= CLICK_TOLERANCE_PX) {
+    e.stopPropagation()
+    applyPaint({ kind: 'piece', pieceId: piece.id })
+    return
+  }
   if (useEditorStore.getState().tool !== 'select' || e.delta > CLICK_TOLERANCE_PX || gizmoHasPointer()) return
   e.stopPropagation()
   const store = useDesignStore.getState()
@@ -42,7 +50,9 @@ export function ConnectorMesh({ piece, floors, look }: { piece: Pick<Piece, 'typ
   const size = connectorSize(piece, floors)
   const parts = useParts(type, size, piece.material ?? 'steel')
   const clipTop = look.kind === 'solid' ? look.clipTop : null
-  const clipping = useMemo(() => (clipTop === null ? [] : [new Plane(new Vector3(0, -1, 0), clipTop)]), [clipTop])
+  const custom = useDesignStore((s) => s.design.customMaterials ?? NO_CUSTOM)
+  // The hidden part above the floor being edited must not catch clicks either.
+  const raycast = useMemo(() => (clipTop === null ? noRaycast : raycastBelow(clipTop)), [clipTop])
   const elevation = elevationOf(floors, connectorFloors(piece).from)
 
   return (
@@ -54,26 +64,18 @@ export function ConnectorMesh({ piece, floors, look }: { piece: Pick<Piece, 'typ
       onClick={look.kind === 'solid' && piece.id ? (e) => selectPiece(e, piece as Piece) : undefined}
     >
       {parts.map((part, i) => {
-        const spec = MATERIALS[part.material] ?? MATERIALS.steel
-        const seeThrough = spec.opacity !== undefined && spec.opacity < 1
+        const material =
+          look.kind === 'solid' ? sharedMaterialById(part.material, custom, 'steel', { doubleSided: part.doubleSided, clipped: true }) : look.kind === 'ghost' ? ghostMaterial : previewMaterial
         return (
-          <mesh key={i} geometry={part.geometry} castShadow={look.kind === 'solid' && !seeThrough} receiveShadow={look.kind === 'solid'} raycast={look.kind === 'solid' ? undefined : noRaycast} renderOrder={look.kind === 'preview' ? 9 : 0}>
-            {look.kind === 'solid' ? (
-              <meshStandardMaterial
-                color={spec.color}
-                roughness={spec.roughness}
-                transparent={seeThrough}
-                opacity={spec.opacity ?? 1}
-                depthWrite={!seeThrough}
-                side={part.doubleSided || seeThrough ? DoubleSide : undefined}
-                clippingPlanes={clipping}
-              />
-            ) : look.kind === 'ghost' ? (
-              <meshBasicMaterial color={overlayTokens.ghost} transparent opacity={0.12} depthWrite={false} toneMapped={false} side={DoubleSide} />
-            ) : (
-              <meshBasicMaterial color={overlayTokens.selection} transparent opacity={0.3} depthWrite={false} toneMapped={false} side={DoubleSide} />
-            )}
-          </mesh>
+          <mesh
+            key={i}
+            geometry={part.geometry}
+            material={material}
+            castShadow={look.kind === 'solid' && !material.transparent}
+            receiveShadow={look.kind === 'solid'}
+            raycast={look.kind === 'solid' ? raycast : noRaycast}
+            renderOrder={look.kind === 'preview' ? 9 : 0}
+          />
         )
       })}
     </group>
@@ -91,6 +93,10 @@ export function Connectors() {
   const belowFloors = useEditorStore((s) => s.belowFloors)
   const active = floors.find((f) => f.index === activeFloor)
   const clipTop = elevationOf(floors, activeFloor) + (active?.height ?? 3)
+  // One clipping plane for every connector material (shared instances), moved before paint.
+  useLayoutEffect(() => {
+    activeFloorClip.constant = clipTop
+  }, [clipTop])
 
   return (
     <>

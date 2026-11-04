@@ -22,7 +22,7 @@ const TOOL_GROUPS: Tool[][] = [
   ],
   [
     { id: 'furnish', label: 'Furnish', built: false },
-    { id: 'materials', label: 'Materials', built: false },
+    { id: 'paint', label: 'Materials', built: true, key: 'P' },
     { id: 'lights', label: 'Lights', built: false },
   ],
   [

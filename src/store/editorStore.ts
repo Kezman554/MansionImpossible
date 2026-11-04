@@ -3,10 +3,11 @@ import { OPENING_STYLES } from '../editor/openings'
 import type { Rect } from '../editor/roomTool'
 import type { PalettePiece } from '../editor/freeform/catalog'
 import type { ConnectorType } from '../editor/connectors/catalog'
+import { DEFAULT_CUSTOM_COLOUR } from '../editor/catalog/materials'
 import type { Opening, OpeningStyle, Piece } from '../types/design'
 import { useDesignStore } from './designStore'
 
-export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform' | 'connector' | 'tank'
+export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform' | 'connector' | 'tank' | 'paint'
 export type GizmoMode = 'translate' | 'rotate' | 'scale'
 
 /** An opening on a room, by id. Openings live inside their room, so they're selected here, not in the design store. */
@@ -41,6 +42,12 @@ interface EditorState {
   tankPreview: { x: number; z: number } | null
   /** What the transform gizmo does to selected pieces. */
   gizmoMode: GizmoMode
+  /** Material the paint tool applies: a catalogue id or a custom colour's id. */
+  paintMaterial: string
+  /** The custom colour picker's current colour (#rrggbb). */
+  customColour: string
+  setPaintMaterial: (id: string) => void
+  setCustomColour: (colour: string) => void
   setTool: (tool: Tool) => void
   setPieceType: (type: PalettePiece) => void
   setConnectorType: (type: ConnectorType) => void
@@ -73,6 +80,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   piecePreview: null,
   tankPreview: null,
   gizmoMode: 'translate',
+  paintMaterial: 'marble',
+  customColour: DEFAULT_CUSTOM_COLOUR,
+  setPaintMaterial: (paintMaterial) => set({ paintMaterial, tool: 'paint' }),
+  setCustomColour: (customColour) => set({ customColour }),
 
   setTool: (tool) => {
     // The door tool places doors and the window tool windows; keep the style in step.

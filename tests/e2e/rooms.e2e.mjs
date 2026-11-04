@@ -98,9 +98,11 @@ try {
     const along = (axis, line) => ps.filter((p) => p.axis === axis && Math.abs(p.line - line) < 1e-6);
     return { total: ps.length, sharedAB: along('z', 2).filter((p) => p.from < 2 && p.to > -3).length, sharedRow: along('x', 2).length } })`)
   check('shared walls are merged, not doubled', walls.sharedAB === 1 && walls.sharedRow === 1, JSON.stringify(walls))
-  const meshes = await b.evaluate(`(() => { const out = []; $three().scene.traverse((o) => { if (o.isMesh && o.material.type !== 'ShadowMaterial') out.push({ v: o.geometry.attributes.position.count, cast: o.castShadow, indexed: !!o.geometry.index, type: o.geometry.type }) }); return out })()`)
-  const wallMesh = meshes.find((m) => m.type === 'BufferGeometry' && m.cast && m.v === walls.total * 24)
-  check('walls render as one merged mesh (24 vertices per piece) casting shadows', !!wallMesh, JSON.stringify(meshes.map((m) => `${m.type}:${m.v}${m.cast ? ':cast' : ''}`)))
+  const meshes = await b.evaluate(`(() => { const out = []; $three().scene.traverse((o) => { if (o.isMesh && o.material.type !== 'ShadowMaterial') out.push({ name: o.name, v: o.geometry.attributes.position.count, cast: o.castShadow, indexed: !!o.geometry.index, type: o.geometry.type }) }); return out })()`)
+  // Walls are built face by face (so each face can be painted): two triangles per face, at
+  // least five faces per wall piece (no underside on the floor), all merged per material.
+  const wallMeshes = meshes.filter((m) => m.name === 'walls')
+  check('walls render as one merged mesh (unpainted: one material) casting shadows', wallMeshes.length === 1 && wallMeshes[0].cast && wallMeshes[0].v >= walls.total * 30 && wallMeshes[0].v % 6 === 0, JSON.stringify(meshes.map((m) => `${m.name}:${m.type}:${m.v}${m.cast ? ':cast' : ''}`)))
 
   // 2. Select a room, resize it with a handle, undo
   await key('v')

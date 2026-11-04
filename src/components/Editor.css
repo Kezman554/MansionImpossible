@@ -638,3 +638,38 @@
 .tray__tiles--pieces {
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
 }
+
+/* Paint tray: swatches carry scene colours from design data (inline), never chrome tokens */
+.tray__tiles--swatches {
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+}
+
+.tray__tile--swatch {
+  height: 72px;
+}
+
+.tray__swatch {
+  width: 40px;
+  height: 28px;
+  border-radius: var(--radius-input);
+  box-shadow: var(--ring-decorative);
+  background-size: cover;
+}
+
+.tray__current {
+  margin-left: auto;
+}
+
+.tray__colour input {
+  width: 40px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-input);
+  background: none;
+  cursor: pointer;
+}
+
+.viewport--paint canvas {
+  cursor: crosshair;
+}

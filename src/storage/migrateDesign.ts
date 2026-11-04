@@ -1,4 +1,5 @@
 // Brings designs saved by earlier versions of the app up to the current schema.
+import { CONNECTOR_TYPES } from '../editor/connectors/catalog'
 import { DESIGN_SCHEMA_VERSION, type Design } from '../types/design'
 
 export const DEFAULT_WALL_THICKNESS = 0.2
@@ -38,6 +39,20 @@ export function migrateDesign(design: Loose): Design {
 
   // v3 → v4: designs gained the central fish tank (none yet).
   if (current.version === 3) current = { ...current, tank: current.tank ?? null, version: 4 }
+
+  // v4 → v5: materials. Rooms gained per-face wall materials and designs custom colours.
+  // Connectors (added within v4) always carry toFloor. The old 'fish-tank' piece type is gone:
+  // design.tank is the only tank, so such placeholder pieces are dropped.
+  if (current.version === 4) {
+    const rooms = (current.rooms as Loose[]).map((room) => {
+      const materials = (room.materials as Loose | undefined) ?? { floor: null, walls: null, ceiling: null }
+      return { ...room, materials: { ...materials, faces: (materials.faces as Loose | undefined) ?? {} } }
+    })
+    const pieces = (current.pieces as Loose[])
+      .filter((p) => p.type !== 'fish-tank')
+      .map((p) => (CONNECTOR_TYPES.includes(p.type as never) && typeof p.toFloor !== 'number' ? { ...p, toFloor: p.floor } : p))
+    current = { ...current, rooms, pieces, customMaterials: Array.isArray(current.customMaterials) ? current.customMaterials : [], version: 5 }
+  }
 
   return current as unknown as Design
 }

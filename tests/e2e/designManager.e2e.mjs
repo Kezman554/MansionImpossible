@@ -58,7 +58,7 @@ try {
     s.addObject({ kind: 'room', name: 'Great hall', type: 'Room', wallThickness: 0.2, size: [12, 5, 9], position: [0, 0, 0], openings: [{ id: 'd1', type: 'door', wall: 'south', offset: 6, width: 2, height: 3, sill: 0 }], materials: { floor: 'marble', walls: null, ceiling: null } });
     s.addObject({ kind: 'room', name: 'Library', type: 'Room', wallThickness: 0.2, size: [8, 4, 6], position: [12, 0, 0], rotation: [0, Math.PI / 2, 0], openings: [], materials: { floor: null, walls: 'oak', ceiling: null } });
     s.addObject({ kind: 'room', name: 'Observatory', type: 'Room', wallThickness: 0.2, floor: 1, size: [6, 6, 6], position: [0, 0, 0], openings: [], materials: { floor: null, walls: null, ceiling: 'glass' } });
-    s.addObject({ kind: 'piece', type: 'fish-tank', size: [4, 15, 4], position: [6, -3, 4.5], material: null });
+    s.addObject({ kind: 'piece', type: 'pillar', size: [4, 15, 4], position: [6, -3, 4.5], material: null });
     s.addObject({ kind: 'furniture', catalogId: 'grand-piano', position: [3, 0, 2], scale: [1.2, 1.2, 1.2], material: null });
     s.updateObject($S().design.rooms[0].id, { name: 'Grand hall' });
     return true })()`)

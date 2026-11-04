@@ -66,6 +66,10 @@ export function parseDesign(text: string): Design {
       throw new DesignFileError('"tank" is invalid')
     }
   }
+  const custom = data.customMaterials
+  if (custom !== undefined && (!Array.isArray(custom) || !custom.every((m) => isRecord(m) && isString(m.id) && isString(m.color) && /^#[0-9a-f]{6}$/i.test(m.color as string)))) {
+    throw new DesignFileError('"customMaterials" is invalid')
+  }
   if (!isRecord(data.settings)) throw new DesignFileError('"settings" is missing')
   return migrateDesign(data)
 }

@@ -8,12 +8,12 @@ import { duplicateSelection } from './freeform/actions'
 
 type KeyLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'>
 export type EditorAction =
-  | 'select-tool' | 'room-tool' | 'door-tool' | 'window-tool' | 'freeform-tool' | 'connector-tool' | 'tank-tool'
+  | 'select-tool' | 'room-tool' | 'door-tool' | 'window-tool' | 'freeform-tool' | 'connector-tool' | 'tank-tool' | 'paint-tool'
   | 'gizmo-move' | 'gizmo-rotate' | 'gizmo-scale' | 'duplicate'
   | 'floor-up' | 'floor-down' | 'escape' | 'delete'
 
 /**
- * V select, R room, D door, W window, F freeform, C connectors (stairs, lifts, slides), K fish tank; M / T / S = gizmo move, rotate (turn), scale;
+ * V select, R room, D door, W window, F freeform, C connectors (stairs, lifts, slides), K fish tank, P paint; M / T / S = gizmo move, rotate (turn), scale;
  * Ctrl+D duplicate; Page Up/Down = floor; Escape = cancel / deselect; Delete or Backspace = delete selection.
  */
 export function editorActionFor(event: KeyLike): EditorAction | null {
@@ -38,6 +38,9 @@ export function editorActionFor(event: KeyLike): EditorAction | null {
     case 'c':
     case 'C':
       return 'connector-tool'
+    case 'p':
+    case 'P':
+      return 'paint-tool'
     case 'k':
     case 'K':
       return 'tank-tool'
@@ -74,6 +77,7 @@ export function runEditorAction(action: EditorAction): void {
   else if (action === 'freeform-tool') editor.setTool('freeform')
   else if (action === 'tank-tool') editor.setTool('tank')
   else if (action === 'connector-tool') editor.setTool('connector')
+  else if (action === 'paint-tool') editor.setTool('paint')
   else if (action === 'gizmo-move') editor.setGizmoMode('translate')
   else if (action === 'gizmo-rotate') editor.setGizmoMode('rotate')
   else if (action === 'gizmo-scale') editor.setGizmoMode('scale')
