@@ -135,10 +135,8 @@ try {
   check('L picks the light tool and its tray', (await b.evaluate('$E().tool')) === 'light' && (await b.evaluate(`!!document.querySelector('[aria-label="Lights"].tray')`)))
   const TYPES = ['Ceiling light', 'Lamp', 'Spotlight', 'Strip light']
   const COLOURS = ['Warm white', 'Cool white', 'Candle', 'Rose', 'Aqua']
-  // The page has had no pointer movement yet; a person's mouse always arrives before a click.
-  await mouse('mouseMoved', await screen(0, 0, 0))
-  await mouse('mouseMoved', await screen(1, 0, 1))
-  await sleep(100)
+  // Picking uses the camera as of the last rendered frame: wait for frames with the new view.
+  await b.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))')
   const start = await steps()
   for (let i = 0; i < 20; i++) {
     if (i % 5 === 0) await clickButton(TYPES[i / 5])
@@ -253,8 +251,7 @@ try {
   await key('l')
   await view(0, 0, 0, 0, 14, 8)
   await sleep(300)
-  await mouse('mouseMoved', await screen(1, 0, 1)) // the new canvas hasn't seen the pointer yet
-  await sleep(100)
+  await b.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))') // a newly opened design: wait for frames with this view before clicking
   await clickAt(await screen(0, 0, 0))
   check('and takes lights', (await b.evaluate('$S().design.lights.length')) === 1)
 

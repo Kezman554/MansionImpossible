@@ -195,7 +195,7 @@ try {
   await sleep(500)
   check('reloaded intact: faces, floors, ceilings, pieces and custom colours', (await b.evaluate('JSON.stringify({ rooms: $S().design.rooms, pieces: $S().design.pieces, customMaterials: $S().design.customMaterials })')) === painted)
   check('and drawn painted', JSON.stringify(await b.evaluate('$wallMaterials()')) === JSON.stringify(['brick-red', 'gold', 'sage', 'tile-azure', 'warm-white']))
-  check('saved as v5', (await b.evaluate('$S().design.version')) === 5)
+  check('saved in the current format (v6 since P)', (await b.evaluate('$S().design.version')) === 6)
 
   // 4. Click-through: the elevator runs to the Second floor; on the ground floor its upper part is hidden
   await key('v')
@@ -246,7 +246,7 @@ try {
   await b.waitFor(`$S().design.name === 'Old v4 manor' && !!$three()?.controls`)
   await b.evaluate(H2)
   const up = await b.evaluate('$S().design')
-  check('a v4 design opens upgraded to v5', up.version === 5 && Array.isArray(up.customMaterials) && JSON.stringify(up.rooms[0].materials) === '{"floor":"marble","walls":"oak","ceiling":null,"faces":{}}', JSON.stringify({ v: up.version, m: up.rooms[0].materials }))
+  check('a v4 design opens upgraded (through v5 to the current v6)', up.version === 6 && Array.isArray(up.customMaterials) && JSON.stringify(up.rooms[0].materials) === '{"floor":"marble","walls":"oak","ceiling":null,"faces":{}}', JSON.stringify({ v: up.version, m: up.rooms[0].materials }))
   check('its fish-tank piece is gone, its stairs gained toFloor', up.pieces.length === 1 && up.pieces[0].type === 'stairs' && up.pieces[0].toFloor === 0, JSON.stringify(up.pieces.map((p) => [p.type, p.toFloor])))
   await key('p')
   await pick('Wood', 'Pale ash')

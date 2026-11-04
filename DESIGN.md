@@ -16,6 +16,8 @@ The interface is the deep water around the fish tank — the app's signature fea
 - **The 3D scene is full-colour, lit and textured.** Walls, floors and furniture take their own materials (marble is marble). The palette below never tints scene materials.
 - The palette covers the chrome **and the editor overlays drawn into the scene**: selection outline, grid, ghosted floors, transform gizmo, hover.
 - One deliberate crossover: the UI `water` token and the fish-tank shader's tint are the same colour. The tint (and the aquarium glass) live in the scene catalogue, `src/editor/catalog/materials.ts`, as `water` and `aquarium-glass`; the token stays the chrome's
+- The viewport background is the scene's sky (since P): its colour follows the time of day from `src/editor/catalog/lights.ts` (scene data); at night it nears `ground`. The `ground` token stays the chrome's deepest surface
+- Light colours (presets and the picker) are scene data in the lights catalogue and in each light; chips show them inline
 - Scene colours are design data: the one materials catalogue (`src/editor/catalog/materials.ts`) and the colours a user mixes with the custom colour picker, saved in the design (`customMaterials`). Paint-tray swatches show them inline; they never become tokens
 
 ## Tokens
@@ -23,7 +25,7 @@ Typeface: Bricolage Grotesque, weights 400 / 500 / 700, bundled with `@fontsourc
 
 | Role | Dark (only mode) |
 |---|---|
-| ground (viewport background, deepest) | `#051A1E` |
+| ground (deepest chrome; the viewport behind the scene's sky) | `#051A1E` |
 | surface (app chrome, panels over the viewport) | `#072328` |
 | raised (inputs, tiles, rails, inspector) | `#0C2F35` |
 | border (decorative only, never a state) | `#1B4850` |

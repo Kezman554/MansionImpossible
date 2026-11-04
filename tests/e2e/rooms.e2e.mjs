@@ -76,6 +76,9 @@ try {
   // A closer, steadier view for drawing.
   await b.evaluate(`(() => { const t = $three(); t.controls.target.set(4, 0, 2); t.camera.position.set(4, 26, 20); t.controls.update(); return true })()`)
   await sleep(600)
+  // Picking uses the camera as of the last rendered frame: wait for frames with the new view
+  // (the first after mount can be slow while shaders compile in software rendering).
+  await b.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))')
 
   // 1. Draw several adjoining rooms with the room tool (R)
   check('placeholder boxes are gone: an empty design has no meshes but the ground', await b.evaluate(`(() => { let n = 0; $three().scene.traverse((o) => { if (o.isMesh && o.material.type !== 'ShadowMaterial') n++ }); return n === 0 })()`))
@@ -178,6 +181,9 @@ try {
   await page()
   await b.evaluate(`(() => { const t = $three(); t.controls.target.set(0, 0, 0); t.camera.position.set(45, 18, 45); t.controls.update(); return true })()`)
   await sleep(600)
+  // Picking uses the camera as of the last rendered frame: wait for frames with the new view
+  // (the first after mount can be slow while shaders compile in software rendering).
+  await b.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))')
   const fade = await b.evaluate(`(() => { const out = []; $three().scene.traverse((o) => { if (o.isLineSegments && o.material.uniforms?.fadeEnd) out.push([o.material.uniforms.fadeStart.value, o.material.uniforms.fadeEnd.value]) }); return out })()`)
   check('grid lines fade out with distance (minor sooner than major)', fade.length === 2 && fade.every(([s, e]) => e > s && e < 300) && fade[0][1] < fade[1][1], JSON.stringify(fade.map((f) => f.map(Math.round))))
   await shot('6-low-quality-grid-fade')
