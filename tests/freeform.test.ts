@@ -13,7 +13,8 @@ const piece = (over: Partial<Piece> = {}): Piece => ({ ...(newPiece('pillar', 0,
 describe('piece palette', () => {
   it('offers walls, floor panels, domes, tubes, platforms, pillars, arches and ramps', () => {
     expect(PIECE_PALETTE.map((t) => PIECES[t].label)).toEqual(['Wall segment', 'Floor panel', 'Dome', 'Glass tube', 'Platform', 'Pillar', 'Arch', 'Ramp'])
-    expect(pieceLabel('fireman-pole')).toBe('Fireman pole')
+    expect(pieceLabel('fireman-pole')).toBe("Fireman's pole")
+    expect(pieceLabel('bookcase-passage')).toBe('Bookcase passage')
   })
 
   it('gives every shape a unit geometry filling x, z ∈ [-0.5, 0.5] and y ∈ [0, 1]', () => {

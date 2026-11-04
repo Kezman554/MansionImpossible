@@ -2,10 +2,11 @@ import { create } from 'zustand'
 import { OPENING_STYLES } from '../editor/openings'
 import type { Rect } from '../editor/roomTool'
 import type { PalettePiece } from '../editor/freeform/catalog'
+import type { ConnectorType } from '../editor/connectors/catalog'
 import type { Opening, OpeningStyle, Piece } from '../types/design'
 import { useDesignStore } from './designStore'
 
-export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform' | 'tank'
+export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform' | 'connector' | 'tank'
 export type GizmoMode = 'translate' | 'rotate' | 'scale'
 
 /** An opening on a room, by id. Openings live inside their room, so they're selected here, not in the design store. */
@@ -32,14 +33,17 @@ interface EditorState {
   selectedOpening: OpeningRef | null
   /** Piece the freeform tool places. */
   pieceType: PalettePiece
-  /** Where the freeform tool would place a piece right now. */
-  piecePreview: Pick<Piece, 'type' | 'position' | 'rotation' | 'scale' | 'size'> | null
+  /** Connector the connector tool places. */
+  connectorType: ConnectorType
+  /** Where the freeform or connector tool would place a piece right now. */
+  piecePreview: Pick<Piece, 'type' | 'position' | 'rotation' | 'scale' | 'size' | 'floor' | 'toFloor'> | null
   /** Where the fish tank tool would put the tank's centre right now. */
   tankPreview: { x: number; z: number } | null
   /** What the transform gizmo does to selected pieces. */
   gizmoMode: GizmoMode
   setTool: (tool: Tool) => void
   setPieceType: (type: PalettePiece) => void
+  setConnectorType: (type: ConnectorType) => void
   setPiecePreview: (preview: EditorState['piecePreview']) => void
   setGizmoMode: (mode: GizmoMode) => void
   setTankPreview: (preview: EditorState['tankPreview']) => void
@@ -65,6 +69,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   openingPreview: null,
   selectedOpening: null,
   pieceType: 'pillar',
+  connectorType: 'stairs',
   piecePreview: null,
   tankPreview: null,
   gizmoMode: 'translate',
@@ -90,6 +95,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setOpeningPreview: (openingPreview) => set({ openingPreview }),
   selectOpening: (selectedOpening) => set({ selectedOpening }),
   setPieceType: (pieceType) => set({ pieceType, tool: 'freeform', piecePreview: null }),
+  setConnectorType: (connectorType) => set({ connectorType, tool: 'connector', piecePreview: null }),
   setPiecePreview: (piecePreview) => set({ piecePreview }),
   setGizmoMode: (gizmoMode) => set({ gizmoMode }),
   setTankPreview: (tankPreview) => set({ tankPreview }),

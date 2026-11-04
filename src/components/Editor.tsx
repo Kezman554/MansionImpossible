@@ -12,6 +12,7 @@ import { FloorGauge } from './FloorGauge'
 import { Inspector } from './Inspector'
 import { OpeningTray } from './OpeningTray'
 import { PieceTray } from './PieceTray'
+import { ConnectorTray } from './ConnectorTray'
 import { SaveBanner } from './SaveBanner'
 import { SettingsDialog } from './SettingsDialog'
 import { StatusBar } from './StatusBar'
@@ -61,6 +62,7 @@ export function Editor({ onBack }: EditorProps) {
           <FloorGauge />
           <OpeningTray />
           <PieceTray />
+          <ConnectorTray />
         </main>
         <Inspector />
       </div>

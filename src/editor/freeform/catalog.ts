@@ -1,5 +1,6 @@
 // The freeform piece palette: design data (scene shapes and their default materials).
 import type { PieceType, Vec3 } from '../../types/design'
+import { CONNECTORS, isConnectorType } from '../connectors/catalog'
 
 export interface PieceSpec {
   label: string
@@ -27,5 +28,6 @@ export const PIECES: Record<PalettePiece, PieceSpec> = {
 
 /** Label for any piece type, including ones without a palette entry yet (stairs, slides…). */
 export function pieceLabel(type: PieceType): string {
+  if (isConnectorType(type)) return CONNECTORS[type].label
   return (PIECES as Partial<Record<PieceType, PieceSpec>>)[type]?.label ?? type.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase())
 }

@@ -1,13 +1,14 @@
 import { Line } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
-import { BoxGeometry, BufferGeometry, PlaneGeometry } from 'three'
+import { BoxGeometry, BufferGeometry, ExtrudeGeometry, Path, PlaneGeometry, Shape, ShapeGeometry } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { materialFor, MATERIALS, OPENING_MATERIALS } from '../editor/catalog/materials'
 import { openingSpan } from '../editor/openings'
-import { roomRect } from '../editor/roomTool'
+import { floorHoles, holesInRect } from '../editor/connectors/connectors'
+import { roomRect, type Rect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
-import type { FishTank, Room } from '../types/design'
+import type { FishTank, Floor, Piece, Room } from '../types/design'
 import { openingFills, type FillMaterial } from './openingFills'
 import { overlayTokens } from './overlayTokens'
 import { layoutFloorWalls, onAquarium, type WallBox } from './roomGeometry'
@@ -66,12 +67,44 @@ function AquariumWalls({ geometry, ghost = false }: { geometry: BufferGeometry |
   )
 }
 
-/** Ceilings face down: seen from inside a room, invisible from above in the editor. */
-function buildCeilings(rooms: Room[]) {
+type Plan = [number, number]
+
+/** A rectangle with holes as a 2D shape; `flip` maps world z to -y (for shapes laid down with rotateX(-π/2)). */
+function shapeWithHoles(r: Rect, holes: Plan[][], flip: boolean): Shape {
+  const y = (z: number) => (flip ? -z : z)
+  const shape = new Shape().moveTo(r.x0, y(r.z0)).lineTo(r.x1, y(r.z0)).lineTo(r.x1, y(r.z1)).lineTo(r.x0, y(r.z1)).closePath()
+  for (const hole of holes) {
+    const path = new Path().moveTo(hole[0][0], y(hole[0][1]))
+    for (const [x, z] of hole.slice(1)) path.lineTo(x, y(z))
+    path.closePath()
+    shape.holes.push(path)
+  }
+  return shape
+}
+
+/**
+ * A room's floor slab: a box, or where a connector comes up through the floor, the same slab
+ * with matching holes cut out. userData.holes counts them.
+ */
+function buildSlab(room: Room, holes: Plan[][]): BufferGeometry {
+  const r = roomRect(room)
+  const cut = holesInRect(r, holes)
+  const geometry = cut.length
+    ? new ExtrudeGeometry(shapeWithHoles(r, cut, true), { depth: SLAB.top - SLAB.bottom, bevelEnabled: false }).rotateX(-Math.PI / 2).translate(0, SLAB.bottom, 0)
+    : new BoxGeometry(r.x1 - r.x0, SLAB.top - SLAB.bottom, r.z1 - r.z0).translate((r.x0 + r.x1) / 2, (SLAB.bottom + SLAB.top) / 2, (r.z0 + r.z1) / 2)
+  geometry.userData.holes = cut.length
+  return geometry
+}
+
+/** Ceilings face down: seen from inside a room, invisible from above in the editor. Connectors going up cut holes in them. */
+function buildCeilings(rooms: Room[], holes: Plan[][]) {
   return mergeByKey(
     rooms.map((room): [string, BufferGeometry] => {
       const r = roomRect(room)
-      const plane = new PlaneGeometry(r.x1 - r.x0, r.z1 - r.z0).rotateX(Math.PI / 2).translate((r.x0 + r.x1) / 2, room.size[1] - 0.001, (r.z0 + r.z1) / 2)
+      const cut = holesInRect(r, holes)
+      const plane = cut.length
+        ? new ShapeGeometry(shapeWithHoles(r, cut, false)).rotateX(Math.PI / 2).translate(0, room.size[1] - 0.001, 0)
+        : new PlaneGeometry(r.x1 - r.x0, r.z1 - r.z0).rotateX(Math.PI / 2).translate((r.x0 + r.x1) / 2, room.size[1] - 0.001, (r.z0 + r.z1) / 2)
       return [materialFor(room.materials.ceiling, 'ceiling').id, plane]
     }),
   )
@@ -83,28 +116,35 @@ function SurfaceMaterial({ id }: { id: string }) {
   return <meshStandardMaterial color={m.color} roughness={m.roughness} transparent={seeThrough} opacity={m.opacity ?? 1} depthWrite={!seeThrough} />
 }
 
-function FloorRooms({ floor, elevation, rooms, tank }: { floor: number; elevation: number; rooms: Room[]; tank: FishTank | null }) {
+interface FloorRoomsProps {
+  floor: number
+  elevation: number
+  rooms: Room[]
+  tank: FishTank | null
+  /** Plan outlines of connectors coming up through this floor, and going on up through its ceilings. */
+  slabHoles: Plan[][]
+  ceilingHoles: Plan[][]
+}
+
+function FloorRooms({ floor, elevation, rooms, tank, slabHoles, ceilingHoles }: FloorRoomsProps) {
   // Walls touching the tank are worked out again whenever the rooms or the tank change.
   const layout = useMemo(() => layoutFloorWalls(rooms, tank), [rooms, tank])
   const walls = useMemo(() => buildWalls(rooms, layout.boxes), [rooms, layout])
   const fills = useMemo(() => buildFills(rooms, layout.aquarium), [rooms, layout])
   const aquarium = useMemo(() => buildAquarium(layout.aquarium), [layout])
-  const ceilings = useMemo(() => buildCeilings(rooms), [rooms])
-  useEffect(() => () => [...walls, ...fills, ...ceilings].forEach((g) => g.geometry.dispose()), [walls, fills, ceilings])
+  const ceilings = useMemo(() => buildCeilings(rooms, ceilingHoles), [rooms, ceilingHoles])
+  const slabs = useMemo(() => rooms.map((room) => ({ room, geometry: buildSlab(room, slabHoles) })), [rooms, slabHoles])
+  useEffect(() => () => [...walls, ...fills, ...ceilings, ...slabs].forEach((g) => g.geometry.dispose()), [walls, fills, ceilings, slabs])
   useEffect(() => () => aquarium?.dispose(), [aquarium])
   const pointer = useRoomPointer(floor, elevation, rooms)
 
   return (
     <group position-y={elevation} {...pointer}>
-      {rooms.map((room) => {
-        const r = roomRect(room)
-        return (
-          <mesh key={room.id} position={[(r.x0 + r.x1) / 2, (SLAB.bottom + SLAB.top) / 2, (r.z0 + r.z1) / 2]} castShadow receiveShadow>
-            <boxGeometry args={[r.x1 - r.x0, SLAB.top - SLAB.bottom, r.z1 - r.z0]} />
-            <SurfaceMaterial id={materialFor(room.materials.floor, 'floor').id} />
-          </mesh>
-        )
-      })}
+      {slabs.map(({ room, geometry }) => (
+        <mesh key={room.id} name="slab" userData={{ roomId: room.id, holes: geometry.userData.holes }} geometry={geometry} castShadow receiveShadow>
+          <SurfaceMaterial id={materialFor(room.materials.floor, 'floor').id} />
+        </mesh>
+      ))}
       {walls.map(({ key, geometry }) => (
         <mesh key={key} name="walls" geometry={geometry} castShadow receiveShadow>
           <SurfaceMaterial id={key} />
@@ -158,6 +198,15 @@ function GhostFloor({ elevation, rooms, tank }: { elevation: number; rooms: Room
   )
 }
 
+/** The active floor's rooms with the holes connectors cut through its slabs and ceilings. */
+function ActiveFloorRooms({ pieces, floors, ...props }: Omit<FloorRoomsProps, 'slabHoles' | 'ceilingHoles'> & { pieces: Piece[]; floors: Floor[] }) {
+  const holes = useMemo(() => {
+    const design = { pieces, floors }
+    return { slab: floorHoles(design, props.floor, 'slab'), ceiling: floorHoles(design, props.floor, 'ceiling') }
+  }, [pieces, floors, props.floor])
+  return <FloorRooms {...props} slabHoles={holes.slab} ceilingHoles={holes.ceiling} />
+}
+
 /**
  * All rooms, floor by floor. The active floor is drawn in full and takes pointer events;
  * floors above it are hidden; floors below are ghosted or hidden (the gauge's toggle).
@@ -166,6 +215,7 @@ export function Rooms() {
   const rooms = useDesignStore((s) => s.design.rooms)
   const floors = useDesignStore((s) => s.design.floors)
   const tank = useDesignStore((s) => s.design.tank)
+  const pieces = useDesignStore((s) => s.design.pieces)
   const activeFloor = useEditorStore((s) => s.activeFloor)
   const belowFloors = useEditorStore((s) => s.belowFloors)
   const byFloor = useMemo(() => {
@@ -180,7 +230,7 @@ export function Rooms() {
         if (floor > activeFloor || (floor < activeFloor && belowFloors === 'hide')) return null
         const elevation = elevationOf(floors, floor)
         return floor === activeFloor ? (
-          <FloorRooms key={floor} floor={floor} elevation={elevation} rooms={floorRooms} tank={tank} />
+          <ActiveFloorRooms key={floor} floor={floor} elevation={elevation} rooms={floorRooms} tank={tank} pieces={pieces} floors={floors} />
         ) : (
           <GhostFloor key={floor} elevation={elevation} rooms={floorRooms} tank={tank} />
         )

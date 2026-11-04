@@ -2,6 +2,7 @@ import { TransformControls } from '@react-three/drei'
 import { useEffect, useLayoutEffect, useRef, type ComponentRef, type RefObject } from 'react'
 import { Euler, Vector3, type Color, type Group, type Object3D } from 'three'
 import { pieceFromTransform, ROTATION_SNAP_DEGREES, SIZE_SNAP, snapTo } from '../editor/freeform/pieces'
+import { isConnector, pieceOnFloor } from '../editor/connectors/connectors'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Piece, Vec3 } from '../types/design'
@@ -37,6 +38,12 @@ interface Drag {
   checkpointed: boolean
 }
 
+/** A connector keeps its fitted size and stays on its floor; the gizmo only moves and turns it. */
+function connectorPatch(piece: Piece, patch: Partial<Piece>): Partial<Piece> {
+  if (!isConnector(piece)) return patch
+  return { position: [patch.position![0], 0, patch.position![2]], rotation: [0, patch.rotation![1], 0] }
+}
+
 /**
  * The transform gizmo on the selected pieces (on the active floor). It drives an invisible
  * proxy object; changes are written back to the pieces as the gizmo moves — one undo step per
@@ -55,9 +62,13 @@ export function PieceGizmo() {
   const proxy = useRef<Group>(null)
   const drag = useRef<Drag | null>(null)
   const controls = useRef<ComponentRef<typeof TransformControls>>(null)
-  const selected = pieces.filter((p) => p.floor === activeFloor && selection.includes(p.id))
-  const elevation = elevationOf(floors, activeFloor)
+  const selected = pieces.filter((p) => pieceOnFloor(p, activeFloor) && selection.includes(p.id))
   const single = selected.length === 1 ? selected[0] : null
+  // Connectors stand on their lowest floor, which may be below the one being edited.
+  const elevation = elevationOf(floors, (single ?? selected[0])?.floor ?? activeFloor)
+  // Connectors stay on the floor, turn only about the vertical and are sized by their floors.
+  const connector = selected.some(isConnector)
+  const gizmoMode = single && !(connector && mode === 'scale') ? mode : 'translate'
 
   // Park the proxy on the selection whenever the pieces change outside a drag (undo, inspector…).
   useLayoutEffect(() => {
@@ -98,7 +109,7 @@ export function PieceGizmo() {
     const snap = pieceSnap()
     const updates: [string, Partial<Piece>][] =
       d.pieces.length === 1
-        ? [[d.pieces[0].id, pieceFromTransform(g.position, new Euler().copy(g.rotation), g.scale, d.pieces[0], elevation, snap)]]
+        ? [[d.pieces[0].id, connectorPatch(d.pieces[0], pieceFromTransform(g.position, new Euler().copy(g.rotation), g.scale, d.pieces[0], elevation, snap))]]
         : d.pieces.map((p) => {
             const delta = g.position.clone().sub(d.proxyStart)
             const move = (v: number, dv: number) => (snap ? snapTo(v + dv, snap) : Math.round((v + dv) * 1000) / 1000)
@@ -125,8 +136,11 @@ export function PieceGizmo() {
         object={proxy as RefObject<Group>}
         // axis is public at runtime (the hovered handle), only typed private in three-stdlib.
         onChange={() => (gizmoState.axis = (controls.current as unknown as { axis: string | null } | null)?.axis ?? null)}
-        mode={single ? mode : 'translate'}
-        space={single && mode !== 'translate' ? 'local' : 'world'}
+        mode={gizmoMode}
+        space={single && gizmoMode !== 'translate' ? 'local' : 'world'}
+        showY={!(connector && gizmoMode === 'translate')}
+        showX={!(connector && gizmoMode === 'rotate')}
+        showZ={!(connector && gizmoMode === 'rotate')}
         translationSnap={snapOn ? gridSize : null}
         rotationSnap={snapOn ? (ROTATION_SNAP_DEGREES * Math.PI) / 180 : null}
         scaleSnap={snapOn ? SIZE_SNAP : null}

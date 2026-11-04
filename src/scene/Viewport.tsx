@@ -4,6 +4,7 @@ import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Quality } from '../types/appSettings'
 import { EditorCamera, type CameraState } from './EditorCamera'
+import { Connectors } from './Connectors'
 import { FishTank } from './FishTank'
 import { FpsProbe } from './FpsProbe'
 import { Ground } from './Ground'
@@ -27,6 +28,12 @@ interface ViewportProps {
 }
 
 // Dev only: lets the console (and browser tests) read the live renderer, camera and controls.
+function onCreated(state: RootState) {
+  // Connectors are cut off at the top of the floor being edited, with a clipping plane.
+  state.gl.localClippingEnabled = true
+  exposeForDev(state)
+}
+
 function exposeForDev({ get }: RootState) {
   if (import.meta.env.DEV) Object.assign((window as unknown as { __mansion: object }).__mansion ?? {}, { three: get })
 }
@@ -55,7 +62,7 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
         gl={{ antialias: preset.antialias, powerPreference: 'high-performance' }}
         shadows={preset.shadows ? 'percentage' : false}
         camera={{ fov: 45, near: 0.1, far: 2000, position: camera.position.toArray() }}
-        onCreated={exposeForDev}
+        onCreated={onCreated}
       >
         <color attach="background" args={[overlayTokens.ground]} />
         <Lighting shadows={preset.shadows} plotSize={plotSize} />
@@ -64,6 +71,7 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
         <Rooms />
         <FishTank caustics={quality === 'high'} />
         <Pieces />
+        <Connectors />
         <PieceGizmo />
         <RoomDraft />
         <SelectionOverlay />

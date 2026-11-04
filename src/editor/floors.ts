@@ -6,6 +6,7 @@
 // stack downwards from ground level.
 import { newId } from '../store/designStore'
 import type { Design, Floor } from '../types/design'
+import { refitConnectors } from './connectors/connectors'
 import { refitOpenings } from './openings'
 
 export const DEFAULT_FLOOR_HEIGHT = 3
@@ -37,7 +38,7 @@ export function addFloor(design: Design, where: 'above' | 'below'): { design: De
   const indexes = design.floors.map((f) => f.index)
   const index = where === 'above' ? Math.max(...indexes) + 1 : Math.min(...indexes) - 1
   const floor: Floor = { id: newId(), index, name: defaultFloorName(index), elevation: 0, height: DEFAULT_FLOOR_HEIGHT }
-  return { design: { ...design, floors: stackFloors([...design.floors, floor]) }, index }
+  return { design: refitConnectors({ ...design, floors: stackFloors([...design.floors, floor]) }), index }
 }
 
 /** Counts what a floor holds, for the remove toast. */
@@ -61,13 +62,20 @@ export function removeFloor(design: Design, index: number): Design {
     return hasAbove ? (i > 0 ? i - 1 : i) : i < 0 ? i + 1 : i
   }
   const keep = <T extends { floor: number }>(objects: T[]) => objects.filter((o) => o.floor !== index).map((o) => (shift(o.floor) === o.floor ? o : { ...o, floor: shift(o.floor) }))
-  return {
+  // A connector reaching the removed floor now reaches the one below it (or only its own floor).
+  const pieces = keep(design.pieces).map((p) => {
+    if (p.toFloor === undefined) return p
+    const reach = p.toFloor === index ? index - 1 : p.toFloor
+    const toFloor = Math.max(p.floor, shift(reach))
+    return toFloor === p.toFloor ? p : { ...p, toFloor }
+  })
+  return refitConnectors({
     ...design,
     floors: stackFloors(remaining.map((f) => ({ ...f, index: shift(f.index) }))),
     rooms: keep(design.rooms),
-    pieces: keep(design.pieces),
+    pieces,
     furniture: keep(design.furniture),
-  }
+  })
 }
 
 export function renameFloor(design: Design, index: number, name: string): Design {
@@ -89,7 +97,7 @@ export function setFloorHeight(design: Design, index: number, height: number): D
     const resized = { ...room, size: [room.size[0], next, room.size[2]] as typeof room.size }
     return { ...resized, openings: refitOpenings(resized) }
   })
-  return { ...design, rooms, floors: stackFloors(design.floors.map((f) => (f.index === index ? { ...f, height: next } : f))) }
+  return refitConnectors({ ...design, rooms, floors: stackFloors(design.floors.map((f) => (f.index === index ? { ...f, height: next } : f))) })
 }
 
 /** The floor to show after floors change: the same index if it still exists, else the nearest one. */

@@ -92,8 +92,10 @@ export type PieceType =
   | 'arch'
   | 'ramp'
   | 'stairs'
+  | 'spiral-stairs'
   | 'elevator'
   | 'slide'
+  | 'spiral-slide'
   | 'fireman-pole'
   | 'fish-tank'
   | 'bookcase-passage'
@@ -107,9 +109,18 @@ export type PieceType =
 export interface Piece extends Placed {
   kind: 'piece'
   type: PieceType
-  /** Base size [x, y, z] in metres, before scale. */
+  /**
+   * Base size [x, y, z] in metres, before scale. For vertical connectors only the footprint is
+   * the user's (width, and depth for elevators); height and run are fitted to the floors.
+   */
   size: Vec3
   material: string | null
+  /**
+   * Vertical connectors only (stairs, elevators, slides, poles): the floor the connector reaches.
+   * It runs from `floor` (always the lower) up to this floor's surface, and cuts holes in the
+   * floors in between and in this one.
+   */
+  toFloor?: number
 }
 
 /** A catalogue item: furniture, lighting or landscaping. */

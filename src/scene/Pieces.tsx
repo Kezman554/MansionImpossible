@@ -4,6 +4,9 @@ import { BoxGeometry, DoubleSide, EdgesGeometry, Matrix4, type InstancedMesh, ty
 import { MATERIALS } from '../editor/catalog/materials'
 import { DOUBLE_SIDED, pieceGeometry } from '../editor/freeform/geometry'
 import { groupForInstancing, pieceMatrix } from '../editor/freeform/pieces'
+import { isConnectorType } from '../editor/connectors/catalog'
+import { connectorSize, isConnector, pieceOnFloor } from '../editor/connectors/connectors'
+import { ConnectorMesh } from './Connectors'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Piece, PieceType } from '../types/design'
@@ -110,9 +113,26 @@ function PieceBox({ piece, elevation, dashed = false }: { piece: Pick<Piece, 'po
   )
 }
 
+/** The connector tool's preview: the connector at its fitted size, translucent coral, inside a dashed box. */
+function ConnectorPreview({ preview }: { preview: NonNullable<ReturnType<typeof useEditorStore.getState>['piecePreview']> }) {
+  const floors = useDesignStore((s) => s.design.floors)
+  const piece = { ...preview, material: null, size: connectorSize(preview as Piece, floors) }
+  return (
+    <>
+      <ConnectorMesh piece={piece} floors={floors} look={{ kind: 'preview' }} />
+      <PieceBox piece={piece} elevation={elevationOf(floors, preview.floor)} dashed />
+    </>
+  )
+}
+
 /** The freeform tool's preview: the piece's shape, translucent coral, inside a dashed box. */
 function PlacementPreview({ elevation }: { elevation: number }) {
   const preview = useEditorStore((s) => s.piecePreview)
+  if (preview && isConnectorType(preview.type)) return <ConnectorPreview preview={preview} />
+  return <PiecePreview preview={preview} elevation={elevation} />
+}
+
+function PiecePreview({ preview, elevation }: { preview: ReturnType<typeof useEditorStore.getState>['piecePreview']; elevation: number }) {
   const mesh = useRef<InstancedMesh>(null)
   useLayoutEffect(() => {
     if (!mesh.current || !preview) return
@@ -143,12 +163,13 @@ export function Pieces() {
 
   const layers = useMemo(() => {
     const byFloor = new Map<number, Piece[]>()
-    for (const p of pieces) byFloor.set(p.floor, [...(byFloor.get(p.floor) ?? []), p])
+    // Connectors have their own geometry (fitted to the floors): see Connectors.
+    for (const p of pieces) if (!isConnector(p)) byFloor.set(p.floor, [...(byFloor.get(p.floor) ?? []), p])
     return [...byFloor].filter(([floor]) => floor === activeFloor || (floor < activeFloor && belowFloors === 'ghost'))
   }, [pieces, activeFloor, belowFloors])
 
   const activeElevation = elevationOf(floors, activeFloor)
-  const selected = pieces.filter((p) => p.floor === activeFloor && selection.includes(p.id))
+  const selected = pieces.filter((p) => pieceOnFloor(p, activeFloor) && selection.includes(p.id))
 
   return (
     <>
@@ -164,9 +185,13 @@ export function Pieces() {
           />
         )),
       )}
-      {selected.map((p) => (
-        <PieceBox key={p.id} piece={p} elevation={activeElevation} />
-      ))}
+      {selected.map((p) =>
+        isConnector(p) ? (
+          <PieceBox key={p.id} piece={{ ...p, size: connectorSize(p, floors) }} elevation={elevationOf(floors, p.floor)} />
+        ) : (
+          <PieceBox key={p.id} piece={p} elevation={activeElevation} />
+        ),
+      )}
       <PlacementPreview elevation={activeElevation} />
     </>
   )

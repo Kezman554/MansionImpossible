@@ -1,4 +1,5 @@
 import type { ThreeEvent } from '@react-three/fiber'
+import { newConnector } from '../editor/connectors/connectors'
 import { newPiece } from '../editor/freeform/pieces'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
@@ -18,7 +19,7 @@ export function pieceSnap(): number | null {
  * one undo step and selects the new piece.
  */
 export function usePiecePlacement() {
-  const placing = () => useEditorStore.getState().tool === 'freeform'
+  const placing = () => ['freeform', 'connector'].includes(useEditorStore.getState().tool)
 
   /** Base point for a new piece: on top of a piece's upward face, else on the active floor. */
   const pointFor = (e: ThreeEvent<PointerEvent | MouseEvent>, onPiece: boolean) => {
@@ -33,9 +34,11 @@ export function usePiecePlacement() {
   }
 
   const candidate = (e: ThreeEvent<PointerEvent | MouseEvent>, onPiece: boolean) => {
-    const at = pointFor(e, onPiece)
-    if (!at) return null
     const editor = useEditorStore.getState()
+    // Connectors stand on the floor (never stacked); they reach from there to another floor.
+    const at = pointFor(e, onPiece && editor.tool === 'freeform')
+    if (!at) return null
+    if (editor.tool === 'connector') return newConnector(editor.connectorType, useDesignStore.getState().design.floors, editor.activeFloor, at, pieceSnap()) as Omit<Piece, 'id'>
     return newPiece(editor.pieceType, editor.activeFloor, at, pieceSnap()) as Omit<Piece, 'id'>
   }
 
