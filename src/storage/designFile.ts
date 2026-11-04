@@ -59,6 +59,13 @@ export function parseDesign(text: string): Design {
   if (!isRecord(terrain) || !Array.isArray(terrain.heights) || !terrain.heights.every(isNumber)) {
     throw new DesignFileError('"terrain" is missing or invalid')
   }
+  const tank = data.tank
+  if (tank !== undefined && tank !== null) {
+    const pair = (v: unknown) => Array.isArray(v) && v.length === 2 && v.every(isNumber)
+    if (!isRecord(tank) || !isString(tank.id) || !(tank.shape === 'rectangular' || tank.shape === 'cylindrical') || !pair(tank.position) || !pair(tank.size)) {
+      throw new DesignFileError('"tank" is invalid')
+    }
+  }
   if (!isRecord(data.settings)) throw new DesignFileError('"settings" is missing')
   return migrateDesign(data)
 }

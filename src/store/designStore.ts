@@ -47,6 +47,7 @@ export function createDesign(name: string): Design {
     rooms: [],
     pieces: [],
     furniture: [],
+    tank: null,
     terrain: { size: [200, 200], resolution, heights: new Array<number>(resolution * resolution).fill(0) },
     settings: { gridSize: 0.5, snapToGrid: true, timeOfDay: 12 },
     createdAt: timestamp,
@@ -57,6 +58,9 @@ export function createDesign(name: string): Design {
 export function findObject(design: Design, id: string): DesignObject | undefined {
   return design.rooms.find((o) => o.id === id) ?? design.pieces.find((o) => o.id === id) ?? design.furniture.find((o) => o.id === id)
 }
+
+/** True if the id names something selectable: an object, or the fish tank. */
+export const isSelectable = (design: Design, id: string): boolean => !!findObject(design, id) || design.tank?.id === id
 
 export interface DesignState {
   design: Design
@@ -99,7 +103,7 @@ function edit(state: DesignState, next: Design, options?: EditOptions): Partial<
 
 /** Drops ids that no longer exist in the design (after undo, redo or remove). */
 function pruneSelection(design: Design, selection: string[]): string[] {
-  return selection.filter((id) => findObject(design, id))
+  return selection.filter((id) => isSelectable(design, id))
 }
 
 export const useDesignStore = create<DesignState>()((set, get) => ({
@@ -141,9 +145,10 @@ export const useDesignStore = create<DesignState>()((set, get) => ({
     const remove = new Set(Array.isArray(ids) ? ids : [ids])
     set((state) => {
       const { design } = state
-      if (![...remove].some((id) => findObject(design, id))) return {}
+      if (![...remove].some((id) => isSelectable(design, id))) return {}
       const next: Design = {
         ...design,
+        tank: design.tank && remove.has(design.tank.id) ? null : design.tank,
         rooms: design.rooms.filter((o) => !remove.has(o.id)),
         pieces: design.pieces.filter((o) => !remove.has(o.id)),
         furniture: design.furniture.filter((o) => !remove.has(o.id)),
@@ -154,7 +159,7 @@ export const useDesignStore = create<DesignState>()((set, get) => ({
 
   select: (ids, options) => {
     set((state) => {
-      const picked = (Array.isArray(ids) ? ids : [ids]).filter((id) => findObject(state.design, id))
+      const picked = (Array.isArray(ids) ? ids : [ids]).filter((id) => isSelectable(state.design, id))
       const selection = options?.additive ? [...new Set([...state.selection, ...picked])] : picked
       return { selection }
     })

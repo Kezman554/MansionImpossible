@@ -2,8 +2,8 @@
 // so it can be saved to IndexedDB, exported, imported and checked later.
 // All positions and sizes are in real-world metres (1 unit = 1 m); angles in radians.
 
-/** v2: rooms gained wallThickness and type. v3: openings gained style. */
-export const DESIGN_SCHEMA_VERSION = 3
+/** v2: rooms gained wallThickness and type. v3: openings gained style. v4: the central fish tank. */
+export const DESIGN_SCHEMA_VERSION = 4
 
 /** [x, y, z] in metres. y is up. */
 export type Vec3 = [number, number, number]
@@ -120,6 +120,22 @@ export interface Furniture extends Placed {
   material: string | null
 }
 
+export type TankShape = 'rectangular' | 'cylindrical'
+
+/**
+ * The central fish tank: one per design, a core running from the bottom of the lowest floor to
+ * the top of the highest. Its height isn't stored — it follows the floors as they change.
+ * Room walls that touch it turn into glass aquarium walls (derived when drawn, never stored).
+ */
+export interface FishTank {
+  id: string
+  shape: TankShape
+  /** Centre of the footprint [x, z], in metres. */
+  position: [number, number]
+  /** Footprint [width (x), depth (z)] in metres; a cylindrical tank's diameter is the width. */
+  size: [number, number]
+}
+
 export type DesignObject = Room | Piece | Furniture
 export type ObjectKind = DesignObject['kind']
 
@@ -149,6 +165,8 @@ export interface Design {
   rooms: Room[]
   pieces: Piece[]
   furniture: Furniture[]
+  /** The central fish tank, or null when the design has none. */
+  tank: FishTank | null
   terrain: Terrain
   settings: DesignSettings
   /** ISO 8601 timestamps. */

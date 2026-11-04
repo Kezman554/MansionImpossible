@@ -8,12 +8,12 @@ import { duplicateSelection } from './freeform/actions'
 
 type KeyLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'>
 export type EditorAction =
-  | 'select-tool' | 'room-tool' | 'door-tool' | 'window-tool' | 'freeform-tool'
+  | 'select-tool' | 'room-tool' | 'door-tool' | 'window-tool' | 'freeform-tool' | 'tank-tool'
   | 'gizmo-move' | 'gizmo-rotate' | 'gizmo-scale' | 'duplicate'
   | 'floor-up' | 'floor-down' | 'escape' | 'delete'
 
 /**
- * V select, R room, D door, W window, F freeform; M / T / S = gizmo move, rotate (turn), scale;
+ * V select, R room, D door, W window, F freeform, K fish tank; M / T / S = gizmo move, rotate (turn), scale;
  * Ctrl+D duplicate; Page Up/Down = floor; Escape = cancel / deselect; Delete or Backspace = delete selection.
  */
 export function editorActionFor(event: KeyLike): EditorAction | null {
@@ -35,6 +35,9 @@ export function editorActionFor(event: KeyLike): EditorAction | null {
     case 'f':
     case 'F':
       return 'freeform-tool'
+    case 'k':
+    case 'K':
+      return 'tank-tool'
     case 'm':
     case 'M':
       return 'gizmo-move'
@@ -66,6 +69,7 @@ export function runEditorAction(action: EditorAction): void {
   else if (action === 'door-tool') editor.setTool('door')
   else if (action === 'window-tool') editor.setTool('window')
   else if (action === 'freeform-tool') editor.setTool('freeform')
+  else if (action === 'tank-tool') editor.setTool('tank')
   else if (action === 'gizmo-move') editor.setGizmoMode('translate')
   else if (action === 'gizmo-rotate') editor.setGizmoMode('rotate')
   else if (action === 'gizmo-scale') editor.setGizmoMode('scale')
@@ -73,7 +77,7 @@ export function runEditorAction(action: EditorAction): void {
   else if (action === 'floor-up') stepFloor(1)
   else if (action === 'floor-down') stepFloor(-1)
   else if (action === 'delete') deleteSelection()
-  else if (editor.piecePreview) editor.setTool('select')
+  else if (editor.piecePreview || editor.tankPreview) editor.setTool('select')
   else if (editor.draft) editor.setDraft(null)
   else if (editor.selectedOpening) editor.selectOpening(null)
   else if (design.selection.length > 0) design.clearSelection()

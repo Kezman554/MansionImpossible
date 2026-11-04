@@ -3,13 +3,14 @@ import { useEffect, useMemo } from 'react'
 import { BoxGeometry, BufferGeometry, PlaneGeometry } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { materialFor, MATERIALS, OPENING_MATERIALS } from '../editor/catalog/materials'
+import { openingSpan } from '../editor/openings'
 import { roomRect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
-import type { Room } from '../types/design'
+import type { FishTank, Room } from '../types/design'
 import { openingFills, type FillMaterial } from './openingFills'
 import { overlayTokens } from './overlayTokens'
-import { layoutWallBoxes, type WallBox } from './roomGeometry'
+import { layoutFloorWalls, onAquarium, type WallBox } from './roomGeometry'
 import { useRoomPointer } from './useRoomPointer'
 import { elevationOf } from './workPlane'
 
@@ -38,14 +39,31 @@ function mergeByKey<K>(parts: [K, BufferGeometry][]): { key: K; geometry: Buffer
 }
 
 /** One merged geometry per wall material: merged walls with door and window holes cut out. */
-function buildWalls(rooms: Room[]) {
+function buildWalls(rooms: Room[], boxes: WallBox[]) {
   const roomById = new Map(rooms.map((r) => [r.id, r]))
-  return mergeByKey(layoutWallBoxes(rooms).map((b): [string, BufferGeometry] => [materialFor(roomById.get(b.roomId)?.materials.walls ?? null, 'walls').id, boxGeometry(b)]))
+  return mergeByKey(boxes.map((b): [string, BufferGeometry] => [materialFor(roomById.get(b.roomId)?.materials.walls ?? null, 'walls').id, boxGeometry(b)]))
 }
 
-/** Door leaves, frames and glass, merged per material. */
-function buildFills(rooms: Room[]) {
-  return mergeByKey<FillMaterial>(rooms.flatMap((room) => room.openings.flatMap((o) => openingFills(room, o))).map((f) => [f.material, boxGeometry(f)]))
+/** Door leaves, frames and glass, merged per material; none on aquarium walls (they aren't cut). */
+function buildFills(rooms: Room[], aquarium: WallBox[]) {
+  return mergeByKey<FillMaterial>(
+    rooms.flatMap((room) => room.openings.filter((o) => !onAquarium(openingSpan(room, o), aquarium)).flatMap((o) => openingFills(room, o))).map((f) => [f.material, boxGeometry(f)]),
+  )
+}
+
+/** Aquarium walls: every stretch of wall touching the tank, as one merged glass geometry (or null). */
+function buildAquarium(aquarium: WallBox[]): BufferGeometry | null {
+  return aquarium.length ? (mergeByKey(aquarium.map((b): [string, BufferGeometry] => ['aquarium', boxGeometry(b)]))[0]?.geometry ?? null) : null
+}
+
+/** Glass aquarium walls, tinted with the water token (DESIGN.md: water = anything that became aquarium). */
+function AquariumWalls({ geometry, ghost = false }: { geometry: BufferGeometry | null; ghost?: boolean }) {
+  if (!geometry) return null
+  return (
+    <mesh name="aquarium" geometry={geometry} renderOrder={2} raycast={ghost ? noRaycast : undefined}>
+      <meshStandardMaterial color={overlayTokens.water} roughness={0.05} metalness={0.1} transparent opacity={ghost ? 0.15 : 0.3} depthWrite={false} />
+    </mesh>
+  )
 }
 
 /** Ceilings face down: seen from inside a room, invisible from above in the editor. */
@@ -65,11 +83,15 @@ function SurfaceMaterial({ id }: { id: string }) {
   return <meshStandardMaterial color={m.color} roughness={m.roughness} transparent={seeThrough} opacity={m.opacity ?? 1} depthWrite={!seeThrough} />
 }
 
-function FloorRooms({ floor, elevation, rooms }: { floor: number; elevation: number; rooms: Room[] }) {
-  const walls = useMemo(() => buildWalls(rooms), [rooms])
-  const fills = useMemo(() => buildFills(rooms), [rooms])
+function FloorRooms({ floor, elevation, rooms, tank }: { floor: number; elevation: number; rooms: Room[]; tank: FishTank | null }) {
+  // Walls touching the tank are worked out again whenever the rooms or the tank change.
+  const layout = useMemo(() => layoutFloorWalls(rooms, tank), [rooms, tank])
+  const walls = useMemo(() => buildWalls(rooms, layout.boxes), [rooms, layout])
+  const fills = useMemo(() => buildFills(rooms, layout.aquarium), [rooms, layout])
+  const aquarium = useMemo(() => buildAquarium(layout.aquarium), [layout])
   const ceilings = useMemo(() => buildCeilings(rooms), [rooms])
   useEffect(() => () => [...walls, ...fills, ...ceilings].forEach((g) => g.geometry.dispose()), [walls, fills, ceilings])
+  useEffect(() => () => aquarium?.dispose(), [aquarium])
   const pointer = useRoomPointer(floor, elevation, rooms)
 
   return (
@@ -98,6 +120,7 @@ function FloorRooms({ floor, elevation, rooms }: { floor: number; elevation: num
           <SurfaceMaterial id={key} />
         </mesh>
       ))}
+      <AquariumWalls geometry={aquarium} />
     </group>
   )
 }
@@ -106,9 +129,12 @@ function FloorRooms({ floor, elevation, rooms }: { floor: number; elevation: num
  * A floor below the one being edited, ghosted: see-through walls and slabs in the overlay
  * ghost colour with dashed outlines (DESIGN.md: ghosted floors, dashed). Takes no pointer events.
  */
-function GhostFloor({ elevation, rooms }: { elevation: number; rooms: Room[] }) {
-  const walls = useMemo(() => mergeByKey(layoutWallBoxes(rooms).map((b): [string, BufferGeometry] => ['walls', boxGeometry(b)])), [rooms])
+function GhostFloor({ elevation, rooms, tank }: { elevation: number; rooms: Room[]; tank: FishTank | null }) {
+  const layout = useMemo(() => layoutFloorWalls(rooms, tank), [rooms, tank])
+  const walls = useMemo(() => mergeByKey(layout.boxes.map((b): [string, BufferGeometry] => ['walls', boxGeometry(b)])), [layout])
+  const aquarium = useMemo(() => buildAquarium(layout.aquarium), [layout])
   useEffect(() => () => walls.forEach((g) => g.geometry.dispose()), [walls])
+  useEffect(() => () => aquarium?.dispose(), [aquarium])
 
   return (
     <group position-y={elevation} name="ghost-floor">
@@ -117,6 +143,7 @@ function GhostFloor({ elevation, rooms }: { elevation: number; rooms: Room[] }) 
           <meshBasicMaterial color={overlayTokens.ghost} transparent opacity={0.12} depthWrite={false} toneMapped={false} />
         </mesh>
       ))}
+      <AquariumWalls geometry={aquarium} ghost />
       {rooms.map((room) => {
         const r = roomRect(room)
         const loop = (y: number): [number, number, number][] => [[r.x0, y, r.z0], [r.x1, y, r.z0], [r.x1, y, r.z1], [r.x0, y, r.z1], [r.x0, y, r.z0]]
@@ -138,6 +165,7 @@ function GhostFloor({ elevation, rooms }: { elevation: number; rooms: Room[] }) 
 export function Rooms() {
   const rooms = useDesignStore((s) => s.design.rooms)
   const floors = useDesignStore((s) => s.design.floors)
+  const tank = useDesignStore((s) => s.design.tank)
   const activeFloor = useEditorStore((s) => s.activeFloor)
   const belowFloors = useEditorStore((s) => s.belowFloors)
   const byFloor = useMemo(() => {
@@ -152,9 +180,9 @@ export function Rooms() {
         if (floor > activeFloor || (floor < activeFloor && belowFloors === 'hide')) return null
         const elevation = elevationOf(floors, floor)
         return floor === activeFloor ? (
-          <FloorRooms key={floor} floor={floor} elevation={elevation} rooms={floorRooms} />
+          <FloorRooms key={floor} floor={floor} elevation={elevation} rooms={floorRooms} tank={tank} />
         ) : (
-          <GhostFloor key={floor} elevation={elevation} rooms={floorRooms} />
+          <GhostFloor key={floor} elevation={elevation} rooms={floorRooms} tank={tank} />
         )
       })}
     </>

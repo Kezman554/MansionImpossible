@@ -17,6 +17,7 @@ const TOOL_GROUPS: Tool[][] = [
     { id: 'door', label: 'Door', built: true, key: 'D' },
     { id: 'window', label: 'Window', built: true, key: 'W' },
     { id: 'freeform', label: 'Freeform', built: true, key: 'F' },
+    { id: 'tank', label: 'Fish tank', built: true, key: 'K' },
     { id: 'stairs', label: 'Stairs', built: false },
   ],
   [

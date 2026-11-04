@@ -95,7 +95,7 @@ try {
     chrome.name?.includes('Untitled mansion') && chrome.name.includes('saved') && chrome.undo && !chrome.redo &&
     chrome.view.join() === 'Orbit' && chrome.viewDisabled.join() === 'First-person,Tour,Dollhouse' &&
     chrome.quality.join() === 'Med' && chrome.designs && chrome.settings)
-  check('tool rail: Select active, unbuilt tools shown disabled', chrome.tool.join() === 'Select' && chrome.toolsTotal === 12 && chrome.toolsDisabled > 0 && chrome.unlabelledDisabled === 0, `${chrome.toolsDisabled}/${chrome.toolsTotal} disabled`)
+  check('tool rail: Select active, unbuilt tools shown disabled', chrome.tool.join() === 'Select' && chrome.toolsTotal === 13 && chrome.toolsDisabled > 0 && chrome.unlabelledDisabled === 0, `${chrome.toolsDisabled}/${chrome.toolsTotal} disabled`)
   check('inspector summarises the mansion', /Rooms\s*2/.test(chrome.inspector) && /Pieces\s*1/.test(chrome.inspector) && /Furniture\s*1/.test(chrome.inspector))
   check('status bar shows snap and ground-floor rooms', chrome.status.includes('Snap 0.5 m') && chrome.status.includes('Ground floor · 2 rooms'))
 

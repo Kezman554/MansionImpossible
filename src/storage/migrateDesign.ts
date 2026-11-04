@@ -36,5 +36,8 @@ export function migrateDesign(design: Loose): Design {
     current = { ...current, rooms, version: 3 }
   }
 
+  // v3 → v4: designs gained the central fish tank (none yet).
+  if (current.version === 3) current = { ...current, tank: current.tank ?? null, version: 4 }
+
   return current as unknown as Design
 }

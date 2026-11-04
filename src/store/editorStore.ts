@@ -5,7 +5,7 @@ import type { PalettePiece } from '../editor/freeform/catalog'
 import type { Opening, OpeningStyle, Piece } from '../types/design'
 import { useDesignStore } from './designStore'
 
-export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform'
+export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform' | 'tank'
 export type GizmoMode = 'translate' | 'rotate' | 'scale'
 
 /** An opening on a room, by id. Openings live inside their room, so they're selected here, not in the design store. */
@@ -34,12 +34,15 @@ interface EditorState {
   pieceType: PalettePiece
   /** Where the freeform tool would place a piece right now. */
   piecePreview: Pick<Piece, 'type' | 'position' | 'rotation' | 'scale' | 'size'> | null
+  /** Where the fish tank tool would put the tank's centre right now. */
+  tankPreview: { x: number; z: number } | null
   /** What the transform gizmo does to selected pieces. */
   gizmoMode: GizmoMode
   setTool: (tool: Tool) => void
   setPieceType: (type: PalettePiece) => void
   setPiecePreview: (preview: EditorState['piecePreview']) => void
   setGizmoMode: (mode: GizmoMode) => void
+  setTankPreview: (preview: EditorState['tankPreview']) => void
   /** Switches the floor being edited; clears the selection, which belonged to the old floor. */
   setActiveFloor: (index: number) => void
   setBelowFloors: (mode: 'ghost' | 'hide') => void
@@ -63,13 +66,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   selectedOpening: null,
   pieceType: 'pillar',
   piecePreview: null,
+  tankPreview: null,
   gizmoMode: 'translate',
 
   setTool: (tool) => {
     // The door tool places doors and the window tool windows; keep the style in step.
     let { openingStyle } = get()
     if ((tool === 'door' || tool === 'window') && OPENING_STYLES[openingStyle].type !== tool) openingStyle = DEFAULT_STYLE[tool]
-    set({ tool, draft: null, openingPreview: null, piecePreview: null, openingStyle })
+    set({ tool, draft: null, openingPreview: null, piecePreview: null, tankPreview: null, openingStyle })
   },
   setActiveFloor: (activeFloor) => {
     if (activeFloor === get().activeFloor) return
@@ -88,4 +92,5 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setPieceType: (pieceType) => set({ pieceType, tool: 'freeform', piecePreview: null }),
   setPiecePreview: (piecePreview) => set({ piecePreview }),
   setGizmoMode: (gizmoMode) => set({ gizmoMode }),
+  setTankPreview: (tankPreview) => set({ tankPreview }),
 }))

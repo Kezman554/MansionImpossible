@@ -4,6 +4,7 @@ import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import type { Quality } from '../types/appSettings'
 import { EditorCamera, type CameraState } from './EditorCamera'
+import { FishTank } from './FishTank'
 import { FpsProbe } from './FpsProbe'
 import { Ground } from './Ground'
 import { GroundGrid } from './GroundGrid'
@@ -61,6 +62,7 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
         <Ground plotSize={plotSize} elevation={elevation} onCursor={onCursor} />
         <GroundGrid plotSize={plotSize} elevation={elevation} />
         <Rooms />
+        <FishTank caustics={quality === 'high'} />
         <Pieces />
         <PieceGizmo />
         <RoomDraft />

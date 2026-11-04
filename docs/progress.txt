@@ -56,3 +56,10 @@
 - Transform gizmo (drei TransformControls on a proxy, DESIGN.md gizmo colours): M move, T rotate, S scale (scale folds into size); snaps to grid / 15° / 0.1 m; one undo step per drag; multi-select (shift-click) moves together
 - Inspector for a piece (material, position/height, rotation, size, gizmo mode, Duplicate, Delete) and for multi-selection; Ctrl+D duplicates
 - E2E freeform test runs Chrome on the real GPU: Intel UHD held 60 fps orbiting 200 pillars at Medium (falls back to a SKIP on software rendering)
+
+2026-11-04 — Central fish tank
+- design.tank (schema v4, v3 migrates to null): one core object per design — shape (rectangular / cylindrical), footprint centre and size in metres. Height isn't stored: it always runs from the lowest floor to the top of the highest, so floor adds/removes/height changes resize it (src/editor/tank.ts)
+- Fish tank tool (K): hover previews, click places (or moves the one tank), snapped 0.5 m; select + drag moves it (one undo step); inspector: shape, width/depth or diameter, centre, span, aquarium-wall floors, delete (Undo toast)
+- Water: one unlit ShaderMaterial (src/scene/waterMaterial.ts) tinted with the water token, darker with depth, rim brightening; caustics compiled in on High only. Visible water stops at the active floor's top (floors above hide)
+- Aquarium walls: layoutFloorWalls(rooms, tank) splits off every wall stretch touching the tank (centreline on the glass or face against it, within 0.1 m) as full-height glass; doors/windows on that stretch aren't cut. Cylinders give flat walls a window onto the curve. Corner squares / slivers shorter than the wall thickness (min 0.25 m) stay solid. Derived each render, so it follows rooms and tank moves; ghost floors show it ghosted
+- npm run test:e2e: new tank test (28 checks: rooms on 3 floors, drag away/back, reshape, undo, High quality, reload). freeform.e2e times out in the cloud container's headless Chrome before and after this change (no GPU)

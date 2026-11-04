@@ -26,8 +26,10 @@ export function deleteSelection(): void {
   }
 
   const objects = store.selection.map((id) => findObject(store.design, id)).filter((o) => o !== undefined)
-  if (objects.length === 0) return
-  store.removeObjects(objects.map((o) => o.id))
-  const only = objects.length === 1 ? objects[0] : null
-  offerUndo(!only ? `${objects.length} objects` : 'name' in only ? only.name : only.kind === 'piece' ? pieceLabel(only.type) : 'Furniture')
+  const tank = store.design.tank && store.selection.includes(store.design.tank.id) ? store.design.tank : null
+  const count = objects.length + (tank ? 1 : 0)
+  if (count === 0) return
+  store.removeObjects([...objects.map((o) => o.id), ...(tank ? [tank.id] : [])])
+  const only = count === 1 ? objects[0] : null
+  offerUndo(count > 1 ? `${count} objects` : tank ? 'Fish tank' : !only ? 'Object' : 'name' in only ? only.name : only.kind === 'piece' ? pieceLabel(only.type) : 'Furniture')
 }

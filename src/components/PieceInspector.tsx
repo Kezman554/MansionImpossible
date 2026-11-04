@@ -98,7 +98,8 @@ export function SelectionInspector({ ids }: { ids: string[] }) {
   const design = useDesignStore((s) => s.design)
   const pieces = design.pieces.filter((p) => ids.includes(p.id))
   const rooms = design.rooms.filter((r) => ids.includes(r.id)).length
-  const parts = [rooms && `${rooms} room${rooms === 1 ? '' : 's'}`, pieces.length && `${pieces.length} piece${pieces.length === 1 ? '' : 's'}`].filter(Boolean)
+  const tank = !!design.tank && ids.includes(design.tank.id)
+  const parts = [rooms && `${rooms} room${rooms === 1 ? '' : 's'}`, pieces.length && `${pieces.length} piece${pieces.length === 1 ? '' : 's'}`, tank && 'fish tank'].filter(Boolean)
 
   return (
     <>

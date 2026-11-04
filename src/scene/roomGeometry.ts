@@ -7,7 +7,8 @@
 // are coplanar (which would flicker).
 import { openingSpan } from '../editor/openings'
 import { roomRect } from '../editor/roomTool'
-import type { Room } from '../types/design'
+import { tankContact } from '../editor/tank'
+import type { FishTank, Room } from '../types/design'
 
 export type Axis = 'x' | 'z'
 
@@ -141,35 +142,69 @@ export interface WallBox {
  * below the sill and above the head remain. An opening on a shared wall cuts both rooms.
  */
 export function layoutWallBoxes(rooms: Room[]): WallBox[] {
+  return layoutFloorWalls(rooms, null).boxes
+}
+
+export interface FloorWalls {
+  /** Solid wall, with door and window holes cut out. */
+  boxes: WallBox[]
+  /** Stretches of wall that touch the fish tank: glass aquarium walls, full height, no openings. */
+  aquarium: WallBox[]
+}
+
+/**
+ * One floor's walls, with every stretch that touches the fish tank replaced by a glass
+ * aquarium wall (the whole wall height; doors and windows on that stretch aren't cut). Derived
+ * from the rooms and the tank each time, so aquarium walls follow whenever either moves.
+ */
+export function layoutFloorWalls(rooms: Room[], tank: FishTank | null): FloorWalls {
   const spans = rooms.flatMap((room) => room.openings.map((o) => openingSpan(room, o)))
   const boxes: WallBox[] = []
+  const aquarium: WallBox[] = []
 
   for (const piece of layoutWalls(rooms)) {
-    const holes = spans.filter((s) => s.axis === piece.axis && Math.abs(s.line - piece.line) < EPS && s.to > piece.from + EPS && s.from < piece.to - EPS)
+    const box = (from: number, to: number, bottom: number, top: number): WallBox => ({ axis: piece.axis, line: piece.line, from, to, bottom, top, thickness: piece.thickness, roomId: piece.roomId })
     const solid = (from: number, to: number, bottom: number, top: number) => {
-      if (to - from > EPS && top - bottom > EPS) boxes.push({ axis: piece.axis, line: piece.line, from, to, bottom, top, thickness: piece.thickness, roomId: piece.roomId })
+      if (to - from > EPS && top - bottom > EPS) boxes.push(box(from, to, bottom, top))
     }
-    if (holes.length === 0) {
-      solid(piece.from, piece.to, 0, piece.height)
-      continue
+
+    // The stretch against the tank becomes glass; the rest stays wall.
+    const contact = tank ? tankContact(tank, piece) : null
+    let parts: [number, number][] = [[piece.from, piece.to]]
+    if (contact) {
+      aquarium.push(box(contact[0], contact[1], 0, piece.height))
+      parts = ([[piece.from, contact[0]], [contact[1], piece.to]] as [number, number][]).filter(([a, b]) => b - a > EPS)
     }
-    const cuts = [...new Set([piece.from, piece.to, ...holes.flatMap((h) => [h.from, h.to]).filter((v) => v > piece.from && v < piece.to)])].sort((a, b) => a - b)
-    for (let i = 0; i < cuts.length - 1; i++) {
-      const [a, b] = [cuts[i], cuts[i + 1]]
-      const over = holes.filter((h) => h.from <= a + EPS && h.to >= b - EPS)
-      if (over.length === 0) {
-        solid(a, b, 0, piece.height)
+
+    for (const [from, to] of parts) {
+      const holes = spans.filter((s) => s.axis === piece.axis && Math.abs(s.line - piece.line) < EPS && s.to > from + EPS && s.from < to - EPS)
+      if (holes.length === 0) {
+        solid(from, to, 0, piece.height)
         continue
       }
-      // Solid where no hole covers: below the lowest sill and above the highest head
-      // (overlapping holes on the same stretch merge into one).
-      const bottom = Math.min(...over.map((h) => h.bottom))
-      const top = Math.max(...over.map((h) => h.top))
-      solid(a, b, 0, bottom)
-      solid(a, b, top, piece.height)
+      const cuts = [...new Set([from, to, ...holes.flatMap((h) => [h.from, h.to]).filter((v) => v > from && v < to)])].sort((a, b) => a - b)
+      for (let i = 0; i < cuts.length - 1; i++) {
+        const [a, b] = [cuts[i], cuts[i + 1]]
+        const over = holes.filter((h) => h.from <= a + EPS && h.to >= b - EPS)
+        if (over.length === 0) {
+          solid(a, b, 0, piece.height)
+          continue
+        }
+        // Solid where no hole covers: below the lowest sill and above the highest head
+        // (overlapping holes on the same stretch merge into one).
+        const bottom = Math.min(...over.map((h) => h.bottom))
+        const top = Math.max(...over.map((h) => h.top))
+        solid(a, b, 0, bottom)
+        solid(a, b, top, piece.height)
+      }
     }
   }
-  return mergeAdjacentBoxes(boxes)
+  return { boxes: mergeAdjacentBoxes(boxes), aquarium: mergeAdjacentBoxes(aquarium) }
+}
+
+/** True if an opening sits on an aquarium wall (it isn't cut, so its door or window isn't drawn). */
+export function onAquarium(span: { axis: Axis; line: number; from: number; to: number }, aquarium: WallBox[]): boolean {
+  return aquarium.some((a) => a.axis === span.axis && Math.abs(a.line - span.line) < EPS && span.to > a.from + EPS && span.from < a.to - EPS)
 }
 
 /** Joins boxes that continue each other along the same wall with the same height band. */

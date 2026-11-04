@@ -4,6 +4,7 @@ import { OpeningInspector } from './OpeningInspector'
 import { PieceInspector, SelectionInspector } from './PieceInspector'
 import { plural } from './formatEdited'
 import { RoomInspector } from './RoomInspector'
+import { TankInspector } from './TankInspector'
 
 /** Right-hand panel: the selected room, or a summary of the mansion when nothing (or several things) is selected. */
 export function Inspector() {
@@ -33,6 +34,13 @@ export function Inspector() {
       </aside>
     )
   }
+  if (design.tank && selection.length === 1 && selection[0] === design.tank.id) {
+    return (
+      <aside aria-label="Inspector" className="inspector">
+        <TankInspector tank={design.tank} />
+      </aside>
+    )
+  }
   if (selection.length > 1) {
     return (
       <aside aria-label="Inspector" className="inspector">
@@ -56,6 +64,7 @@ export function Inspector() {
     ['Rooms', String(design.rooms.length)],
     ['Pieces', String(design.pieces.length)],
     ['Furniture', String(design.furniture.length)],
+    ['Fish tank', design.tank ? (design.tank.shape === 'cylindrical' ? 'Cylindrical' : 'Rectangular') : 'None (K to place)'],
     ['Plot', `${plotX} × ${plotZ} m`],
   ]
 
