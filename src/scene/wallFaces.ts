@@ -9,6 +9,8 @@ import { BufferGeometry, Float32BufferAttribute } from 'three'
 import { materialFor } from '../editor/catalog/materials'
 import { roomRect } from '../editor/roomTool'
 import type { CustomMaterial, Room, WallFace, WallSide } from '../types/design'
+import { isRound, ROUND_SEGMENTS, roomCircle, roundTankContact, segmentEnds } from '../editor/roundRoom'
+import type { FishTank } from '../types/design'
 import type { WallBox } from './roomGeometry'
 
 const EPS = 1e-6
@@ -26,8 +28,17 @@ type P3 = { x: number; y: number; z: number }
  * The wall face at a point on a wall with outward normal n, or null for tops, undersides and
  * reveals (those take the wall's own material).
  */
-export function wallFaceAt(rooms: Room[], p: P3, n: P3): FaceRef | null {
+export function wallFaceAt(allRooms: Room[], p: P3, n: P3): FaceRef | null {
   if (Math.abs(n.y) > 0.5) return null
+  // A round room's curved wall: facing its centre is the inside face, facing away the outside.
+  for (const room of allRooms) {
+    if (!isRound(room)) continue
+    const c = roomCircle(room)
+    const [dx, dz] = [p.x - c.cx, p.z - c.cz]
+    if (Math.abs(Math.hypot(dx, dz) - c.r) > room.wallThickness / 2 + HIT_SLACK) continue
+    return { roomId: room.id, face: n.x * dx + n.z * dz < 0 ? 'curve-in' : 'curve-out' }
+  }
+  const rooms = allRooms.filter((r) => !isRound(r))
   // Faces looking along z belong to walls running along x (north / south walls), and vice versa.
   const alongX = Math.abs(n.z) >= Math.abs(n.x)
   const across = alongX ? p.z : p.x
@@ -90,6 +101,60 @@ function boxQuads(b: WallBox, cutsAlong: number[]): Quad[] {
   return quads
 }
 
+/** A quad from four corners, wound counter-clockwise as seen from the side its normal points to. */
+function quad(corners: [P3, P3, P3, P3], normal: P3): Quad {
+  const [a, b, c] = corners
+  const [ux, uy, uz, vx, vy, vz] = [b.x - a.x, b.y - a.y, b.z - a.z, c.x - a.x, c.y - a.y, c.z - a.z]
+  const facing = (uy * vz - uz * vy) * normal.x + (uz * vx - ux * vz) * normal.y + (ux * vy - uy * vx) * normal.z
+  return { corners: facing < 0 ? [corners[3], corners[2], corners[1], corners[0]] : corners, normal }
+}
+
+/**
+ * A round room's curved wall as flat segments. Segments against the tank are left out of the
+ * wall and returned as aquarium glass; where the wall meets the glass, its cut ends are capped.
+ */
+export function roundWallQuads(room: Room, tank: FishTank | null): { inside: Quad[]; outside: Quad[]; plain: Quad[]; glass: Quad[] } {
+  const c = roomCircle(room)
+  const t = room.wallThickness / 2
+  const h = room.size[1]
+  const glassAt = roundTankContact(room, tank)
+  const out = { inside: [] as Quad[], outside: [] as Quad[], plain: [] as Quad[], glass: [] as Quad[] }
+  for (let i = 0; i < ROUND_SEGMENTS; i++) {
+    const [[ix0, iz0], [ix1, iz1]] = segmentEnds(c, i, c.r - t)
+    const [[ox0, oz0], [ox1, oz1]] = segmentEnds(c, i, c.r + t)
+    const mid = ((i + 0.5) / ROUND_SEGMENTS) * Math.PI * 2
+    const radial = { x: Math.cos(mid), y: 0, z: Math.sin(mid) }
+    const p = (x: number, y: number, z: number): P3 => ({ x, y, z })
+    const innerFace = quad([p(ix0, 0, iz0), p(ix1, 0, iz1), p(ix1, h, iz1), p(ix0, h, iz0)], { x: -radial.x, y: 0, z: -radial.z })
+    const outerFace = quad([p(ox0, 0, oz0), p(ox1, 0, oz1), p(ox1, h, oz1), p(ox0, h, oz0)], radial)
+    const top = quad([p(ix0, h, iz0), p(ix1, h, iz1), p(ox1, h, oz1), p(ox0, h, oz0)], { x: 0, y: 1, z: 0 })
+    if (glassAt[i]) {
+      const bottom = quad([p(ix0, 0, iz0), p(ix1, 0, iz1), p(ox1, 0, oz1), p(ox0, 0, oz0)], { x: 0, y: -1, z: 0 })
+      out.glass.push(innerFace, outerFace, top, bottom)
+      continue
+    }
+    out.inside.push(innerFace)
+    out.outside.push(outerFace)
+    out.plain.push(top)
+    // Cap the wall where the next or previous segment turns to glass.
+    const capAt = (k: 0 | 1) => {
+      const a = ((i + k) / ROUND_SEGMENTS) * Math.PI * 2
+      const [x0, z0, x1, z1] = [c.cx + Math.cos(a) * (c.r - t), c.cz + Math.sin(a) * (c.r - t), c.cx + Math.cos(a) * (c.r + t), c.cz + Math.sin(a) * (c.r + t)]
+      const sign = k === 1 ? 1 : -1
+      out.plain.push(quad([p(x0, 0, z0), p(x1, 0, z1), p(x1, h, z1), p(x0, h, z0)], { x: -Math.sin(a) * sign, y: 0, z: Math.cos(a) * sign }))
+    }
+    if (glassAt[(i + ROUND_SEGMENTS - 1) % ROUND_SEGMENTS]) capAt(0)
+    if (glassAt[(i + 1) % ROUND_SEGMENTS]) capAt(1)
+  }
+  return out
+}
+
+/** Glass segments of round rooms' walls touching the tank, as one geometry (or null). */
+export function buildRoundGlass(rooms: Room[], tank: FishTank | null): BufferGeometry | null {
+  const quads = rooms.filter(isRound).flatMap((r) => roundWallQuads(r, tank).glass)
+  return quads.length ? quadGeometry(quads) : null
+}
+
 /** Two triangles per quad with world-scale UVs (metres across the face), grouped into one geometry. */
 function quadGeometry(quads: Quad[]): BufferGeometry {
   const position: number[] = []
@@ -117,11 +182,19 @@ function quadGeometry(quads: Quad[]): BufferGeometry {
  * of the room face it belongs to (see wallFaceAt); tops, undersides and reveals take the wall's
  * owning room's walls material.
  */
-export function buildWallFaces(boxes: WallBox[], rooms: Room[], custom: readonly CustomMaterial[] = []): { key: string; geometry: BufferGeometry }[] {
+export function buildWallFaces(boxes: WallBox[], rooms: Room[], custom: readonly CustomMaterial[] = [], tank: FishTank | null = null): { key: string; geometry: BufferGeometry }[] {
   const byId = new Map(rooms.map((r) => [r.id, r]))
   const groups = new Map<string, Quad[]>()
+  const add = (id: string, quads: Quad[]) => quads.length && groups.set(id, [...(groups.get(id) ?? []), ...quads])
+  // Round rooms: the curved wall's inside and outside faces take their own materials.
+  for (const room of rooms.filter(isRound)) {
+    const q = roundWallQuads(room, tank)
+    add(faceMaterialId(room, 'curve-in', custom), q.inside)
+    add(faceMaterialId(room, 'curve-out', custom), q.outside)
+    add(faceMaterialId(room, null, custom), q.plain)
+  }
   for (const b of boxes) {
-    const cuts = rooms.flatMap((r) => {
+    const cuts = rooms.filter((r) => !isRound(r)).flatMap((r) => {
       const rect = roomRect(r)
       return b.axis === 'x' ? [rect.x0, rect.x1] : [rect.z0, rect.z1]
     })

@@ -8,9 +8,10 @@ const STYLE_ICONS: Record<OpeningStyle, string> = {
   'double-door': 'M4 21V4h16v17M2 21h20M12 4v17M10 13h.01M14 13h.01',
   window: 'M5 6h14v10H5zM12 6v10M5 11h14M3 19h18',
   'glass-wall': 'M3 3h18v18H3zM9 3v18M15 3v18',
+  bookcase: 'M5 3h14v18H5zM5 9h14M5 15h14M8 3v6M11 9v6M14 15v6',
 }
 
-const ORDER: OpeningStyle[] = ['single-door', 'double-door', 'window', 'glass-wall']
+const ORDER: OpeningStyle[] = ['single-door', 'double-door', 'bookcase', 'window', 'glass-wall']
 
 /** Catalogue tray (bottom of the viewport, DESIGN.md) for the door and window tools: pick the style to place. */
 export function OpeningTray() {
@@ -22,7 +23,7 @@ export function OpeningTray() {
     <section aria-label="Doors and windows" className="tray">
       <div className="tray__head">
         <span className="tray__title">Doors and windows</span>
-        <span className="tray__hint">Click a wall to place · drag to look around</span>
+        <span className="tray__hint">Click a straight wall to place · round rooms take no openings yet · drag to look around</span>
       </div>
       <div className="tray__tiles" role="group" aria-label="Opening style">
         {ORDER.map((value) => (

@@ -4,7 +4,8 @@ import { BoxGeometry, BufferGeometry, ExtrudeGeometry, Path, PlaneGeometry, Shap
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { materialFor, OPENING_MATERIALS, resolveMaterial, TANK_MATERIALS } from '../editor/catalog/materials'
 import { openingSpan } from '../editor/openings'
-import { floorHoles, holesInRect } from '../editor/connectors/connectors'
+import { floorHoles, holesInConvex, holesInRect } from '../editor/connectors/connectors'
+import { isRound, roundOutline } from '../editor/roundRoom'
 import { roomRect, type Rect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
@@ -12,7 +13,8 @@ import type { CustomMaterial, FishTank, Floor, Piece, Room } from '../types/desi
 import { openingFills, type FillMaterial } from './openingFills'
 import { NO_CUSTOM, ghostMaterial, sharedMaterial, sharedMaterialById } from './materialCache'
 import { overlayTokens } from './overlayTokens'
-import { buildWallFaces } from './wallFaces'
+import { buildRoundGlass, buildWallFaces } from './wallFaces'
+import { ScreenPanels } from './ScreenPanels'
 import { worldUVs } from './worldUV'
 import { layoutFloorWalls, onAquarium, type WallBox } from './roomGeometry'
 import { useRoomPointer } from './useRoomPointer'
@@ -66,10 +68,14 @@ function AquariumWalls({ geometry, ghost = false }: { geometry: BufferGeometry |
 
 type Plan = [number, number]
 
-/** A rectangle with holes as a 2D shape; `flip` maps world z to -y (for shapes laid down with rotateX(-π/2)). */
-function shapeWithHoles(r: Rect, holes: Plan[][], flip: boolean): Shape {
+const rectOutline = (r: Rect): Plan[] => [[r.x0, r.z0], [r.x1, r.z0], [r.x1, r.z1], [r.x0, r.z1]]
+
+/** An outline with holes as a 2D shape; `flip` maps world z to -y (for shapes laid down with rotateX(-π/2)). */
+function shapeWithHoles(outline: Plan[], holes: Plan[][], flip: boolean): Shape {
   const y = (z: number) => (flip ? -z : z)
-  const shape = new Shape().moveTo(r.x0, y(r.z0)).lineTo(r.x1, y(r.z0)).lineTo(r.x1, y(r.z1)).lineTo(r.x0, y(r.z1)).closePath()
+  const shape = new Shape().moveTo(outline[0][0], y(outline[0][1]))
+  for (const [x, z] of outline.slice(1)) shape.lineTo(x, y(z))
+  shape.closePath()
   for (const hole of holes) {
     const path = new Path().moveTo(hole[0][0], y(hole[0][1]))
     for (const [x, z] of hole.slice(1)) path.lineTo(x, y(z))
@@ -85,9 +91,12 @@ function shapeWithHoles(r: Rect, holes: Plan[][], flip: boolean): Shape {
  */
 function buildSlab(room: Room, holes: Plan[][]): BufferGeometry {
   const r = roomRect(room)
-  const cut = holesInRect(r, holes)
-  const geometry = cut.length
-    ? new ExtrudeGeometry(shapeWithHoles(r, cut, true), { depth: SLAB.top - SLAB.bottom, bevelEnabled: false }).rotateX(-Math.PI / 2).translate(0, SLAB.bottom, 0)
+  // Round rooms: a disc (the wall centreline), connector holes trimmed to it.
+  const round = isRound(room)
+  const outline = round ? roundOutline(room) : rectOutline(r)
+  const cut = round ? holesInConvex(outline, holes) : holesInRect(r, holes)
+  const geometry = cut.length || round
+    ? new ExtrudeGeometry(shapeWithHoles(outline, cut, true), { depth: SLAB.top - SLAB.bottom, bevelEnabled: false }).rotateX(-Math.PI / 2).translate(0, SLAB.bottom, 0)
     : new BoxGeometry(r.x1 - r.x0, SLAB.top - SLAB.bottom, r.z1 - r.z0).translate((r.x0 + r.x1) / 2, (SLAB.bottom + SLAB.top) / 2, (r.z0 + r.z1) / 2)
   geometry.userData.holes = cut.length
   return worldUVs(geometry)
@@ -98,9 +107,11 @@ function buildCeilings(rooms: Room[], holes: Plan[][], custom: readonly CustomMa
   return mergeByKey(
     rooms.map((room): [string, BufferGeometry] => {
       const r = roomRect(room)
-      const cut = holesInRect(r, holes)
-      const plane = cut.length
-        ? new ShapeGeometry(shapeWithHoles(r, cut, false)).rotateX(Math.PI / 2).translate(0, room.size[1] - 0.001, 0)
+      const round = isRound(room)
+      const outline = round ? roundOutline(room, room.size[0] / 2 - room.wallThickness / 2) : rectOutline(r)
+      const cut = round ? holesInConvex(outline, holes) : holesInRect(r, holes)
+      const plane = cut.length || round
+        ? new ShapeGeometry(shapeWithHoles(outline, cut, false)).rotateX(Math.PI / 2).translate(0, room.size[1] - 0.001, 0)
         : new PlaneGeometry(r.x1 - r.x0, r.z1 - r.z0).rotateX(Math.PI / 2).translate((r.x0 + r.x1) / 2, room.size[1] - 0.001, (r.z0 + r.z1) / 2)
       return [materialFor(room.materials.ceiling, 'ceiling', custom).id, worldUVs(plane)]
     }),
@@ -121,11 +132,15 @@ interface FloorRoomsProps {
 function FloorRooms({ floor, elevation, rooms, tank, slabHoles, ceilingHoles }: FloorRoomsProps) {
   const custom = useDesignStore((s) => s.design.customMaterials ?? NO_CUSTOM)
   // Walls touching the tank are worked out again whenever the rooms or the tank change.
-  const layout = useMemo(() => layoutFloorWalls(rooms, tank), [rooms, tank])
+  // Straight walls come from rectangular rooms; round rooms draw their own curved wall.
+  const straight = useMemo(() => rooms.filter((r) => !isRound(r)), [rooms])
+  const layout = useMemo(() => layoutFloorWalls(straight, tank), [straight, tank])
   // Face by face, one geometry per material: painting a face only moves it between groups.
-  const walls = useMemo(() => buildWallFaces(layout.boxes, rooms, custom), [rooms, layout, custom])
-  const fills = useMemo(() => buildFills(rooms, layout.aquarium), [rooms, layout])
+  const walls = useMemo(() => buildWallFaces(layout.boxes, rooms, custom, tank), [rooms, layout, custom, tank])
+  const fills = useMemo(() => buildFills(straight, layout.aquarium), [straight, layout])
   const aquarium = useMemo(() => buildAquarium(layout.aquarium), [layout])
+  const roundGlass = useMemo(() => buildRoundGlass(rooms, tank), [rooms, tank])
+  useEffect(() => () => roundGlass?.dispose(), [roundGlass])
   const ceilings = useMemo(() => buildCeilings(rooms, ceilingHoles, custom), [rooms, ceilingHoles, custom])
   const slabs = useMemo(() => rooms.map((room) => ({ room, geometry: buildSlab(room, slabHoles) })), [rooms, slabHoles])
   useEffect(() => () => [...walls, ...fills, ...ceilings, ...slabs].forEach((g) => g.geometry.dispose()), [walls, fills, ceilings, slabs])
@@ -156,6 +171,10 @@ function FloorRooms({ floor, elevation, rooms, tank, slabHoles, ceilingHoles }: 
         <mesh key={key} name="ceiling" userData={{ material: key }} geometry={geometry} material={sharedMaterialById(key, custom, 'plaster')} receiveShadow />
       ))}
       <AquariumWalls geometry={aquarium} />
+      <AquariumWalls geometry={roundGlass} />
+      {rooms.filter(isRound).map((room) => (
+        <ScreenPanels key={room.id} room={room} />
+      ))}
     </group>
   )
 }
@@ -165,9 +184,11 @@ function FloorRooms({ floor, elevation, rooms, tank, slabHoles, ceilingHoles }: 
  * ghost colour with dashed outlines (DESIGN.md: ghosted floors, dashed). Takes no pointer events.
  */
 function GhostFloor({ elevation, rooms, tank }: { elevation: number; rooms: Room[]; tank: FishTank | null }) {
-  const layout = useMemo(() => layoutFloorWalls(rooms, tank), [rooms, tank])
-  const walls = useMemo(() => mergeByKey(layout.boxes.map((b): [string, BufferGeometry] => ['walls', boxGeometry(b)])), [layout])
+  const layout = useMemo(() => layoutFloorWalls(rooms.filter((r) => !isRound(r)), tank), [rooms, tank])
+  const walls = useMemo(() => buildWallFaces(layout.boxes, rooms, NO_CUSTOM, tank), [layout, rooms, tank])
   const aquarium = useMemo(() => buildAquarium(layout.aquarium), [layout])
+  const roundGlass = useMemo(() => buildRoundGlass(rooms, tank), [rooms, tank])
+  useEffect(() => () => roundGlass?.dispose(), [roundGlass])
   useEffect(() => () => walls.forEach((g) => g.geometry.dispose()), [walls])
   useEffect(() => () => aquarium?.dispose(), [aquarium])
 
@@ -177,9 +198,11 @@ function GhostFloor({ elevation, rooms, tank }: { elevation: number; rooms: Room
         <mesh key={key} geometry={geometry} raycast={noRaycast} renderOrder={-1} material={ghostMaterial} />
       ))}
       <AquariumWalls geometry={aquarium} ghost />
+      <AquariumWalls geometry={roundGlass} ghost />
       {rooms.map((room) => {
         const r = roomRect(room)
-        const loop = (y: number): [number, number, number][] => [[r.x0, y, r.z0], [r.x1, y, r.z0], [r.x1, y, r.z1], [r.x0, y, r.z1], [r.x0, y, r.z0]]
+        const corners = isRound(room) ? roundOutline(room) : rectOutline(r)
+        const loop = (y: number): [number, number, number][] => [...corners, corners[0]].map(([x, z]) => [x, y, z])
         return (
           <group key={room.id}>
             <Line points={loop(SLAB.top)} color={overlayTokens.ghost} lineWidth={1} dashed dashSize={0.3} gapSize={0.2} transparent opacity={0.8} raycast={noRaycast} />

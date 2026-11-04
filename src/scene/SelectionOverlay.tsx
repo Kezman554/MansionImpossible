@@ -6,6 +6,7 @@ import { reattachOpenings } from '../editor/openings'
 import { HANDLES, handlePoint, placementFromRect, resizeRect, roomRect, type Handle, type Rect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
+import { isRound, roundOutline } from '../editor/roundRoom'
 import type { Room } from '../types/design'
 import { overlayTokens } from './overlayTokens'
 import { elevationOf, pointAtHeight } from './workPlane'
@@ -14,9 +15,16 @@ const HANDLE_SCREEN_SIZE = 0.016 // fraction of camera distance, so handles stay
 const worldPosition = new Vector3()
 const CURSORS: Record<Handle, string> = { n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', ne: 'nesw-resize', sw: 'nesw-resize', nw: 'nwse-resize', se: 'nwse-resize' }
 
-const outline = (r: Rect, y: number): [number, number, number][] => [
+const rectOutline = (r: Rect, y: number): [number, number, number][] => [
   [r.x0, y, r.z0], [r.x1, y, r.z0], [r.x1, y, r.z1], [r.x0, y, r.z1], [r.x0, y, r.z0],
 ]
+
+/** A room's outline at height y: its rectangle, or its circle (round rooms). */
+function roomOutline(room: Room, y: number): [number, number, number][] {
+  if (!isRound(room)) return rectOutline(roomRect(room), y)
+  const pts = roundOutline(room)
+  return [...pts, pts[0]].map(([x, z]) => [x, y, z])
+}
 
 interface ResizeDrag {
   handle: Handle
@@ -86,10 +94,11 @@ function RoomSelection({ room, elevation }: { room: Room; elevation: number }) {
 
   return (
     <group position-y={elevation}>
-      <Line points={outline(rect, 0.03)} color={overlayTokens.selection} lineWidth={2.5} depthTest={false} renderOrder={10} />
-      <Line points={outline(rect, top)} color={overlayTokens.selection} lineWidth={2.5} depthTest={false} renderOrder={10} />
+      <Line points={roomOutline(room, 0.03)} color={overlayTokens.selection} lineWidth={2.5} depthTest={false} renderOrder={10} />
+      <Line points={roomOutline(room, top)} color={overlayTokens.selection} lineWidth={2.5} depthTest={false} renderOrder={10} />
+      {/* Round rooms resize by radius in the inspector, so they have no corner handles. */}
       <group ref={handles}>
-        {HANDLES.map((handle) => {
+        {(isRound(room) ? [] : HANDLES).map((handle) => {
           const p = handlePoint(rect, handle)
           return (
             <mesh
@@ -135,7 +144,7 @@ export function SelectionOverlay() {
           <RoomSelection key={room.id} room={room} elevation={elevationOf(floors, room.floor)} />
         ) : (
           <group key={room.id} position-y={elevationOf(floors, room.floor)}>
-            <Line points={outline(roomRect(room), room.size[1] + 0.01)} color={overlayTokens.selection} lineWidth={2.5} depthTest={false} renderOrder={10} />
+            <Line points={roomOutline(room, room.size[1] + 0.01)} color={overlayTokens.selection} lineWidth={2.5} depthTest={false} renderOrder={10} />
           </group>
         ),
       )}

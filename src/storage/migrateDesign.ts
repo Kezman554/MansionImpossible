@@ -63,5 +63,12 @@ export function migrateDesign(design: Loose): Design {
     current = { ...current, lights: [], settings: { ...settings, timeOfDay: DEFAULT_TIME_OF_DAY }, version: 6 }
   }
 
+  // v6 → v7: rooms gained a shape (all existing rooms are rectangular); round rooms and their
+  // screens, and bookcase doors' hinge and open state, are new and optional.
+  if (current.version === 6) {
+    const rooms = (current.rooms as Loose[]).map((room) => ({ ...room, shape: room.shape === 'round' ? 'round' : 'rectangular' }))
+    current = { ...current, rooms, version: 7 }
+  }
+
   return current as unknown as Design
 }

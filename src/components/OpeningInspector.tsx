@@ -1,5 +1,11 @@
 import { deleteSelection } from '../editor/deleteSelection'
 import { fitOpening, OPENING_STYLES, restyleOpening, wallOf } from '../editor/openings'
+import { SegmentedControl } from './SegmentedControl'
+
+const HINGES: { value: 'left' | 'right'; label: string }[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'right', label: 'Right' },
+]
 import { roomRect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import type { Opening, OpeningStyle, Room } from '../types/design'
@@ -60,6 +66,20 @@ export function OpeningInspector({ room, opening }: { room: Room; opening: Openi
         </div>
         <p className="inspector__note">Drag it in the viewport to slide it along the wall.</p>
       </section>
+      {opening.style === 'bookcase' && (
+        <section className="inspector__section">
+          <div className="inspector__eyebrow">Secret door</div>
+          <div className="field field--inline">
+            <span className="field__label">Hinge</span>
+            <SegmentedControl label="Hinge side" segments={HINGES} value={opening.hinge ?? 'left'} onChange={(hinge) => save({ ...opening, hinge })} />
+          </div>
+          <label className="field field--inline inspector__check">
+            <input type="checkbox" checked={opening.open ?? false} onChange={(e) => save({ ...opening, open: e.target.checked })} />
+            <span className="field__label">Open</span>
+          </label>
+          <p className="inspector__note">Saved with the design; drawn closed until the swing is animated.</p>
+        </section>
+      )}
       <div className="inspector__actions">
         <button type="button" className="btn btn--danger-outline" onClick={deleteSelection}>
           <BinIcon size={14} />

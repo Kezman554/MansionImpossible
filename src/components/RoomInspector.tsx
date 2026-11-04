@@ -6,8 +6,17 @@ import type { Room } from '../types/design'
 import { onFieldKeys, round2 } from './fieldKeys'
 import { BinIcon } from './icons'
 import { NumberField } from './NumberField'
+import { isRound, reshapeRoom, resizeRound } from '../editor/roundRoom'
+import { ScreensInspector } from './ScreensInspector'
+import { SegmentedControl } from './SegmentedControl'
+
+const SHAPES: { value: Room['shape']; label: string }[] = [
+  { value: 'rectangular', label: 'Rectangular' },
+  { value: 'round', label: 'Round' },
+]
 
 function openingSummary(room: Room): string {
+  if (isRound(room)) return 'None — round walls take no doors or windows yet'
   const doors = room.openings.filter((o) => o.type === 'door').length
   const windows = room.openings.length - doors
   if (!room.openings.length) return 'None — use the Door or Window tool'
@@ -57,12 +66,22 @@ export function RoomInspector({ room, floorName }: { room: Room; floorName: stri
             ))}
           </select>
         </label>
+        <div className="field field--inline">
+          <span className="field__label">Shape</span>
+          <SegmentedControl label="Room shape" segments={SHAPES} value={room.shape ?? 'rectangular'} onChange={(shape) => update(reshapeRoom(room, shape))} />
+        </div>
       </section>
       <section className="inspector__section">
         <div className="inspector__eyebrow">Size, metres</div>
         <div className="field-grid">
-          <NumberField label="Width" value={width} onCommit={(v) => resize('x', v)} />
-          <NumberField label="Length" value={length} onCommit={(v) => resize('z', v)} />
+          {isRound(room) ? (
+            <NumberField label="Radius" value={width / 2} title="To the middle of the wall" onCommit={(v) => update(resizeRound(room, v))} />
+          ) : (
+            <>
+              <NumberField label="Width" value={width} onCommit={(v) => resize('x', v)} />
+              <NumberField label="Length" value={length} onCommit={(v) => resize('z', v)} />
+            </>
+          )}
           <NumberField label="Wall height" value={height} onCommit={(v) => refit({ size: [width, round2(clamp(v, ROOM_LIMITS.wallHeight)), length] })} />
           <NumberField label="Wall thickness" value={room.wallThickness} onCommit={(v) => refit({ wallThickness: round2(clamp(v, ROOM_LIMITS.wallThickness)) })} />
         </div>
@@ -73,6 +92,7 @@ export function RoomInspector({ room, floorName }: { room: Room; floorName: stri
           <span className="inspector__muted">{openingSummary(room)}</span>
         </div>
       </section>
+      {isRound(room) && <ScreensInspector key={room.id} room={room} />}
       <div className="inspector__actions">
         <button type="button" className="btn btn--danger-outline" onClick={deleteSelection}>
           <BinIcon size={14} />

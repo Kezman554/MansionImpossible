@@ -18,7 +18,7 @@ export function SaveBanner() {
         </div>
       </div>
       {design && (
-        <button type="button" className="btn btn--small btn--primary" onClick={() => downloadDesign(design)}>
+        <button type="button" className="btn btn--small btn--primary" onClick={() => void downloadDesign(design)}>
           Export JSON
         </button>
       )}

@@ -31,6 +31,7 @@ const ENTRIES: Record<string, Entry> = {
   oak: { name: 'Oak boards', category: 'wood', color: '#B88A5A', roughness: 0.75, texture: { kind: 'wood', scale: 1.6 } },
   walnut: { name: 'Walnut boards', category: 'wood', color: '#7A5233', roughness: 0.7, texture: { kind: 'wood', scale: 1.6 } },
   ash: { name: 'Pale ash', category: 'wood', color: '#D9C29A', roughness: 0.75, texture: { kind: 'wood', scale: 1.6 } },
+  'book-spines': { name: 'Book spines', category: 'wood', color: '#B4543C', roughness: 0.8, texture: { kind: 'books', scale: 1 }, hidden: true },
   'door-oak': { name: 'Oak door', category: 'wood', color: '#8A5A33', roughness: 0.6 },
   // Marble
   marble: { name: 'White marble', category: 'marble', color: '#E2DDD4', roughness: 0.3, texture: { kind: 'marble', scale: 2 } },
@@ -64,6 +65,7 @@ const ENTRIES: Record<string, Entry> = {
   plaster: { name: 'Plaster', category: 'plain', color: '#EDEAE2', roughness: 0.95 },
   'warm-white': { name: 'Warm white', category: 'plain', color: '#E4DCCB', roughness: 0.9 },
   'frame-white': { name: 'White frame', category: 'plain', color: '#F2F0EA', roughness: 0.5 },
+  'screen-off': { name: 'Blank screen', category: 'plain', color: '#14181C', roughness: 0.15, metalness: 0.2, hidden: true },
   charcoal: { name: 'Charcoal', category: 'plain', color: '#3A3D40', roughness: 0.85 },
   sage: { name: 'Sage', category: 'plain', color: '#9DB39A', roughness: 0.85 },
   navy: { name: 'Navy', category: 'plain', color: '#2C3E5C', roughness: 0.85 },
@@ -89,7 +91,7 @@ export const MATERIAL_CATEGORIES: { id: MaterialCategory; label: string }[] = [
 ]
 
 /** Fixed materials for door leaves, window frames and glazing until they get their own pickers. */
-export const OPENING_MATERIALS = { door: 'door-oak', frame: 'frame-white', glass: 'glass' } as const
+export const OPENING_MATERIALS = { door: 'door-oak', frame: 'frame-white', glass: 'glass', shelf: 'walnut', books: 'book-spines' } as const
 
 export const DEFAULT_SURFACE_MATERIAL = { floor: 'oak', walls: 'warm-white', ceiling: 'plaster' } as const
 

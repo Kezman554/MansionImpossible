@@ -5,12 +5,30 @@ import type { Design } from '../types/design'
 import { migrateDesign } from './migrateDesign'
 
 const DB_NAME = 'mansion-impossible'
-const DB_VERSION = 2
+const DB_VERSION = 3
+
+/**
+ * An uploaded image (screens): stored once, by an id derived from its content, and referenced
+ * from designs by that id — never inlined into a design, so designs and undo stay small.
+ */
+export interface StoredImage {
+  id: string
+  name: string
+  /** MIME type of `data`. */
+  type: string
+  width: number
+  height: number
+  /** The (downscaled) image file's bytes. */
+  data: ArrayBuffer
+  createdAt: string
+}
 
 interface MansionDb extends DBSchema {
   designs: { key: string; value: Design; indexes: { updatedAt: string } }
   /** App-wide preferences (not part of any design), stored under one key. */
   settings: { key: string; value: Partial<AppSettings> }
+  /** The image library (v3). */
+  images: { key: string; value: StoredImage }
 }
 
 const APP_SETTINGS_KEY = 'app'
@@ -26,7 +44,7 @@ export interface DesignSummary {
 
 let dbPromise: Promise<IDBPDatabase<MansionDb>> | null = null
 
-function db(): Promise<IDBPDatabase<MansionDb>> {
+export function db(): Promise<IDBPDatabase<MansionDb>> {
   dbPromise ??= openDB<MansionDb>(DB_NAME, DB_VERSION, {
     upgrade(database, oldVersion) {
       if (oldVersion < 1) {
@@ -34,6 +52,7 @@ function db(): Promise<IDBPDatabase<MansionDb>> {
         designs.createIndex('updatedAt', 'updatedAt')
       }
       if (oldVersion < 2) database.createObjectStore('settings')
+      if (oldVersion < 3) database.createObjectStore('images', { keyPath: 'id' })
     },
   })
   return dbPromise

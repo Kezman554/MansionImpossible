@@ -149,7 +149,7 @@ describe('save format v6', () => {
     const v5 = { ...createDesign('Old'), version: 5, lights: undefined, settings: { gridSize: 0.5, snapToGrid: true, timeOfDay: 7 } }
     const up = parseDesign(JSON.stringify(v5))
     expect(up.version).toBe(DESIGN_SCHEMA_VERSION)
-    expect(DESIGN_SCHEMA_VERSION).toBe(6)
+    expect(DESIGN_SCHEMA_VERSION).toBeGreaterThanOrEqual(6)
     expect(up.lights).toEqual([])
     expect(up.settings.timeOfDay).toBe(DEFAULT_TIME_OF_DAY)
     expect(migrateDesign({ ...v5 } as never).lights).toEqual([])

@@ -24,6 +24,9 @@ interface EditorState {
   activeFloor: number
   /** How floors below the active one show. */
   belowFloors: 'ghost' | 'hide'
+  /** Shape the room tool draws. */
+  roomShape: 'rectangular' | 'round'
+  setRoomShape: (shape: 'rectangular' | 'round') => void
   /** The rectangle being drawn with the room tool, if any. */
   draft: Rect | null
   /** True while a room or opening is being moved or resized. */
@@ -77,6 +80,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   activeFloor: 0,
   belowFloors: 'ghost',
   draft: null,
+  roomShape: 'rectangular',
+  setRoomShape: (roomShape) => set({ roomShape, tool: 'room' }),
   dragging: false,
   openingStyle: 'single-door',
   openingPreview: null,

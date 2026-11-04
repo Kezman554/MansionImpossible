@@ -3,6 +3,7 @@ import { resizeTank, setTankShape, TANK_SHAPES, tankSpan } from '../editor/tank'
 import { useDesignStore } from '../store/designStore'
 import type { FishTank } from '../types/design'
 import { layoutFloorWalls } from '../scene/roomGeometry'
+import { isRound, roundTankContact } from '../editor/roundRoom'
 import { round2 } from './fieldKeys'
 import { BinIcon } from './icons'
 import { NumberField } from './NumberField'
@@ -20,7 +21,10 @@ export function TankInspector({ tank }: { tank: FishTank }) {
   const spans = !span ? '—' : span.lowest === span.highest ? floorName(span.lowest) : `${floorName(span.lowest)} → ${floorName(span.highest)}`
 
   // Aquarium walls on each floor: rooms whose walls touch the tank.
-  const aquariumFloors = design.floors.filter((f) => layoutFloorWalls(design.rooms.filter((r) => r.floor === f.index), tank).aquarium.length > 0).length
+  const aquariumFloors = design.floors.filter((f) => {
+    const rooms = design.rooms.filter((r) => r.floor === f.index)
+    return layoutFloorWalls(rooms.filter((r) => !isRound(r)), tank).aquarium.length > 0 || rooms.some((r) => isRound(r) && roundTankContact(r, tank).some(Boolean))
+  }).length
   const cylindrical = tank.shape === 'cylindrical'
 
   return (

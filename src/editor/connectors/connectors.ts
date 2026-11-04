@@ -211,15 +211,33 @@ export function convexHull(points: Plan[]): Plan[] {
 
 const bounds = (poly: Plan[]) => ({ x0: Math.min(...poly.map((p) => p[0])), x1: Math.max(...poly.map((p) => p[0])), z0: Math.min(...poly.map((p) => p[1])), z1: Math.max(...poly.map((p) => p[1])) })
 
-/**
- * The holes to cut in one rectangular slab or ceiling: each clipped to just inside the
- * rectangle (a millimetre in, so the outline stays whole), and holes that overlap merged into
- * their hull, so the triangulator never sees crossing holes.
- */
-export function holesInRect(rect: Rect, holes: Plan[][]): Plan[][] {
-  const inset = 0.001
-  const inner = { x0: rect.x0 + inset, z0: rect.z0 + inset, x1: rect.x1 - inset, z1: rect.z1 - inset }
-  let out = holes.map((h) => clipToRect(h, inner)).filter((h) => h.length >= 3 && polygonArea(h) > 1e-4)
+/** Clips a convex polygon to a convex outline (Sutherland–Hodgman), either winding. */
+export function clipToConvex(poly: Plan[], outline: Plan[]): Plan[] {
+  const sign = Math.sign(outline.reduce((sum, p, i) => sum + p[0] * outline[(i + 1) % outline.length][1] - outline[(i + 1) % outline.length][0] * p[1], 0)) || 1
+  let out = poly
+  for (let e = 0; e < outline.length && out.length; e++) {
+    const [a, b] = [outline[e], outline[(e + 1) % outline.length]]
+    const side = (p: Plan) => sign * ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]))
+    const cut = (p: Plan, q: Plan): Plan => {
+      const t = side(p) / (side(p) - side(q))
+      return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]
+    }
+    const input = out
+    out = []
+    input.forEach((cur, i) => {
+      const prev = input[(i + input.length - 1) % input.length]
+      if (side(cur) >= 0) {
+        if (side(prev) < 0) out.push(cut(prev, cur))
+        out.push(cur)
+      } else if (side(prev) >= 0) out.push(cut(prev, cur))
+    })
+  }
+  return out
+}
+
+/** Holes that overlap merged into their hull, so the triangulator never sees crossing holes. */
+function mergeOverlapping(holes: Plan[][]): Plan[][] {
+  let out = holes
   for (let merged = true; merged; ) {
     merged = false
     outer: for (let i = 0; i < out.length; i++) {
@@ -234,4 +252,29 @@ export function holesInRect(rect: Rect, holes: Plan[][]): Plan[][] {
     }
   }
   return out
+}
+
+/**
+ * The holes to cut in one rectangular slab or ceiling: each clipped to just inside the
+ * rectangle (a millimetre in, so the outline stays whole), and holes that overlap merged into
+ * their hull, so the triangulator never sees crossing holes.
+ */
+export function holesInRect(rect: Rect, holes: Plan[][]): Plan[][] {
+  const inset = 0.001
+  const inner = { x0: rect.x0 + inset, z0: rect.z0 + inset, x1: rect.x1 - inset, z1: rect.z1 - inset }
+  return mergeOverlapping(holes.map((h) => clipToRect(h, inner)).filter((h) => h.length >= 3 && polygonArea(h) > 1e-4))
+}
+
+/**
+ * The same for any convex slab outline (a round room's floor): holes trimmed to a millimetre
+ * inside it (the outline is pulled in towards its centre), overlapping holes merged.
+ */
+export function holesInConvex(outline: Plan[], holes: Plan[][]): Plan[][] {
+  const cx = outline.reduce((s, p) => s + p[0], 0) / outline.length
+  const cz = outline.reduce((s, p) => s + p[1], 0) / outline.length
+  const inner = outline.map(([x, z]): Plan => {
+    const d = Math.hypot(x - cx, z - cz) || 1
+    return [x - ((x - cx) / d) * 0.001, z - ((z - cz) / d) * 0.001]
+  })
+  return mergeOverlapping(holes.map((h) => clipToConvex(h, inner)).filter((h) => h.length >= 3 && polygonArea(h) > 1e-4))
 }

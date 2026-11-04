@@ -65,6 +65,17 @@ export function nextRoomName(rooms: Pick<Room, 'name'>[]): string {
   return `Room ${n}`
 }
 
+/**
+ * A new round room drawn as a rectangle: the circle fitting its larger side, centred on it,
+ * with no screens yet. Used by the room tool when its shape is Round.
+ */
+export function newRoundRoom(rect: Rect, floor: number, existing: Pick<Room, 'name'>[], wallHeight = DEFAULT_WALL_HEIGHT): NewObject {
+  const d = Math.max(rect.x1 - rect.x0, rect.z1 - rect.z0)
+  const [cx, cz] = [(rect.x0 + rect.x1) / 2, (rect.z0 + rect.z1) / 2]
+  const square = { x0: cx - d / 2, z0: cz - d / 2, x1: cx + d / 2, z1: cz + d / 2 }
+  return { ...(newRoom(square, floor, existing, wallHeight) as Room), shape: 'round', screens: { count: 0, images: [] } } as NewObject
+}
+
 /** A new room on a floor; its walls are the floor's height unless given. */
 export function newRoom(rect: Rect, floor: number, existing: Pick<Room, 'name'>[], wallHeight = DEFAULT_WALL_HEIGHT): NewObject {
   return {
@@ -76,6 +87,7 @@ export function newRoom(rect: Rect, floor: number, existing: Pick<Room, 'name'>[
     wallThickness: DEFAULT_WALL_THICKNESS,
     openings: [],
     materials: { floor: null, walls: null, ceiling: null, faces: {} },
+    shape: 'rectangular',
   }
 }
 
@@ -115,6 +127,12 @@ export function roomAtPoint(rooms: Room[], floor: number, x: number, z: number):
     .map((room) => {
       const rect = roomRect(room)
       const half = room.wallThickness / 2
+      if (room.shape === 'round') {
+        // Inside the curved wall's inner face, or on the wall itself.
+        const d = Math.hypot(x - room.position[0], z - room.position[2])
+        const r = room.size[0] / 2
+        return { room, inside: d < r - half, near: d <= r + half, area: Math.PI * r * r }
+      }
       const inside = x > rect.x0 + half && x < rect.x1 - half && z > rect.z0 + half && z < rect.z1 - half
       const near = x >= rect.x0 - half && x <= rect.x1 + half && z >= rect.z0 - half && z <= rect.z1 + half
       return { room, inside, near, area: (rect.x1 - rect.x0) * (rect.z1 - rect.z0) }

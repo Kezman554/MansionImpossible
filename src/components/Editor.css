@@ -715,3 +715,32 @@
 .viewport--light canvas {
   cursor: crosshair;
 }
+
+/* Screen images in the room inspector */
+.screen-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.screen-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.screen-row__thumb {
+  flex: none;
+  width: 40px;
+  height: 28px;
+  border-radius: var(--radius-input);
+  object-fit: cover;
+  box-shadow: var(--ring-decorative);
+}
+
+.screen-row__thumb--blank {
+  background: var(--raised);
+}

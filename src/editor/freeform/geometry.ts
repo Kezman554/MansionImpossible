@@ -2,6 +2,7 @@
 // x ∈ [-0.5, 0.5], y ∈ [0, 1], z ∈ [-0.5, 0.5] (origin at the middle of the base), so an
 // instance's scale is simply its size in metres.
 import { BoxGeometry, BufferGeometry, CylinderGeometry, ExtrudeGeometry, Path, Shape, SphereGeometry } from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { PieceType } from '../../types/design'
 
 const SEGMENTS = 20
@@ -29,6 +30,19 @@ function ramp(): BufferGeometry {
   return extrude(new Shape().moveTo(-0.5, 0).lineTo(0.5, 0).lineTo(0.5, 1).closePath())
 }
 
+/** A corridor along x: floor, ceiling and two side walls, open at both ends. */
+function passage(): BufferGeometry {
+  const parts = [
+    new BoxGeometry(1, 0.05, 1).translate(0, 0.025, 0),
+    new BoxGeometry(1, 0.05, 1).translate(0, 0.975, 0),
+    new BoxGeometry(1, 0.9, 0.08).translate(0, 0.5, -0.46),
+    new BoxGeometry(1, 0.9, 0.08).translate(0, 0.5, 0.46),
+  ]
+  const merged = mergeGeometries(parts)
+  parts.forEach((g) => g.dispose())
+  return merged
+}
+
 const builders: Partial<Record<PieceType, () => BufferGeometry>> = {
   wall: box,
   'floor-panel': box,
@@ -39,6 +53,7 @@ const builders: Partial<Record<PieceType, () => BufferGeometry>> = {
   tube: () => new CylinderGeometry(0.5, 0.5, 1, SEGMENTS * 2, 1, true).rotateZ(Math.PI / 2).translate(0, 0.5, 0),
   arch,
   ramp,
+  'bookcase-passage': passage,
 }
 
 const cache = new Map<PieceType, BufferGeometry>()

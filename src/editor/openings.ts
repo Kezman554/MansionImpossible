@@ -18,7 +18,12 @@ export const OPENING_STYLES: Record<OpeningStyle, OpeningStyleSpec> = {
   'double-door': { label: 'Double door', type: 'door', width: 1.6, height: 2.1, sill: 0 },
   window: { label: 'Window', type: 'window', width: 1.2, height: 1.2, sill: 0.9 },
   'glass-wall': { label: 'Floor-to-ceiling glass', type: 'window', width: 2.4, height: null, sill: 0 },
+  // A door dressed as a bookcase: fits a wall hole like any door, swings on a hinge (stored).
+  bookcase: { label: 'Bookcase secret door', type: 'door', width: 1.2, height: 2.3, sill: 0 },
 }
+
+/** True for openings that hide a passage (they carry hinge and open). */
+export const isBookcase = (o: Pick<Opening, 'style'>) => o.style === 'bookcase'
 
 /** Position snap along a wall, in metres. */
 export const OPENING_SNAP = 0.1
@@ -75,6 +80,7 @@ export function newOpening(style: OpeningStyle, room: Room, side: WallSide, offs
     width: spec.width,
     height: spec.height ?? room.size[1] - spec.sill,
     sill: spec.sill,
+    ...(style === 'bookcase' ? { hinge: 'left' as const, open: false } : {}),
   }
   return fitOpening(opening, room, wallOf(roomRect(room), side).length)
 }
@@ -82,7 +88,9 @@ export function newOpening(style: OpeningStyle, room: Room, side: WallSide, offs
 /** Changes an opening's style, taking that style's sizes (glass goes up to the ceiling). */
 export function restyleOpening(opening: Opening, style: OpeningStyle, room: Room): Opening {
   const spec = OPENING_STYLES[style]
-  const next = { ...opening, style, type: spec.type, width: spec.width, height: spec.height ?? room.size[1] - spec.sill, sill: spec.sill }
+  const { hinge, open, ...rest } = opening
+  const kept = style === 'bookcase' ? { hinge: hinge ?? ('left' as const), open: open ?? false } : {}
+  const next = { ...rest, ...kept, style, type: spec.type, width: spec.width, height: spec.height ?? room.size[1] - spec.sill, sill: spec.sill }
   return fitOpening(next, room, wallOf(roomRect(room), opening.wall).length)
 }
 
@@ -137,6 +145,8 @@ export const alongWall = (wall: WallLine, p: { x: number; z: number }) => (wall.
  * span holds the point, with the distance along that wall.
  */
 export function wallAtPoint(room: Room, p: { x: number; z: number }): { side: WallSide; along: number } | null {
+  // Round rooms' curved walls take no openings yet: no door, window or bookcase can be placed there.
+  if (room.shape === 'round') return null
   const rect = roomRect(room)
   const reach = room.wallThickness / 2 + 0.05
   let best: { side: WallSide; along: number; distance: number } | null = null

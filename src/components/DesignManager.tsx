@@ -9,7 +9,8 @@ import {
   renameDesign,
   type DesignSummary,
 } from '../storage/designDb'
-import { DesignFileError, downloadDesign, parseDesign } from '../storage/designFile'
+import { DesignFileError, downloadDesign, parseDesignFile } from '../storage/designFile'
+import { storeEmbeddedImages, type EmbeddedImage } from '../storage/imageStore'
 import { useAppStore } from '../store/appStore'
 import type { Design } from '../types/design'
 import { DeleteDesignDialog } from './DeleteDesignDialog'
@@ -50,7 +51,7 @@ export function DesignManager({ onOpen }: DesignManagerProps) {
 
   const exportDesign = async (id: string) => {
     const design = await getDesign(id)
-    if (design) downloadDesign(design)
+    if (design) await downloadDesign(design)
   }
 
   const onNew = async () => {
@@ -63,13 +64,18 @@ export function DesignManager({ onOpen }: DesignManagerProps) {
     event.target.value = ''
     if (!file) return
     let design: Design
+    let images: EmbeddedImage[]
     try {
-      design = parseDesign(await file.text())
+      ;({ design, images } = parseDesignFile(await file.text()))
     } catch (error) {
       showToast(error instanceof DesignFileError ? `Couldn't import — ${error.message}` : "Couldn't read that file")
       return
     }
-    const imported = await write(() => importDesign(design), design)
+    // The images it carries go into the library first, so its screens find them.
+    const imported = await write(async () => {
+      await storeEmbeddedImages(images)
+      return importDesign(design)
+    }, design)
     if (imported) showToast(`Imported ${imported.name}`)
   }
 

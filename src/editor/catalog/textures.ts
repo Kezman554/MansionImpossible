@@ -2,9 +2,9 @@
 // bundled, so no licence files): greyscale RGBA pixels that a material's colour tints. Each
 // pattern tiles seamlessly (value noise wraps at the edge). Pure functions, testable in Node.
 
-export type TextureKind = 'wood' | 'marble' | 'tile' | 'carpet' | 'brick' | 'concrete' | 'brushed'
+export type TextureKind = 'wood' | 'marble' | 'tile' | 'carpet' | 'brick' | 'concrete' | 'brushed' | 'books'
 
-export const TEXTURE_KINDS: TextureKind[] = ['wood', 'marble', 'tile', 'carpet', 'brick', 'concrete', 'brushed']
+export const TEXTURE_KINDS: TextureKind[] = ['wood', 'marble', 'tile', 'carpet', 'brick', 'concrete', 'brushed', 'books']
 /** Pixels per side: small, so all seven patterns together are under 200 KB of GPU memory. */
 export const TEXTURE_SIZE = 64
 
@@ -64,6 +64,14 @@ const PATTERNS: Record<TextureKind, (u: number, v: number) => number> = {
   concrete: (u, v) => 0.82 + 0.18 * fbm(u, v, 41),
   // Fine streaks along u.
   brushed: (u, v) => 0.88 + 0.12 * noise(u * 0.125, v, 64, 51),
+  // Book spines: 24 vertical bands of varied brightness, with darker gaps and a light band near the top.
+  books: (u, v) => {
+    const spine = Math.floor(u * 24)
+    const across = (u * 24) % 1
+    const gap = across < 0.08 ? 0.45 : 1
+    const band = v > 0.78 && v < 0.84 ? 1.25 : 1
+    return Math.min(1, gap * band * (0.5 + hash(spine, 3, 61) * 0.5))
+  },
 }
 
 /** The pattern as RGBA bytes, TEXTURE_SIZE × TEXTURE_SIZE, grey (r = g = b), opaque. */

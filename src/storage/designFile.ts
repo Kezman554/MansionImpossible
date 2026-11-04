@@ -1,11 +1,16 @@
 // JSON export / import of a single design, for backups.
 import { DESIGN_SCHEMA_VERSION, type Design } from '../types/design'
+import { embeddedImagesFor, type EmbeddedImage } from './imageStore'
 import { migrateDesign, OLDEST_SUPPORTED_VERSION } from './migrateDesign'
 
 export class DesignFileError extends Error {}
 
-export function serialiseDesign(design: Design): string {
-  return JSON.stringify(design, null, 2)
+/**
+ * The design as a file. Images it uses (screens) travel with it under `embeddedImages`, outside
+ * the design itself, so an exported design opens complete elsewhere.
+ */
+export function serialiseDesign(design: Design, images: EmbeddedImage[] = []): string {
+  return JSON.stringify(images.length ? { ...design, embeddedImages: images } : design, null, 2)
 }
 
 /** "Kestrel Hall" → "kestrel-hall.mansion.json" */
@@ -36,6 +41,11 @@ function checkList(data: Record<string, unknown>, key: string, kind?: string): v
 
 /** Parses and checks a design file. Throws DesignFileError with a readable reason. */
 export function parseDesign(text: string): Design {
+  return parseDesignFile(text).design
+}
+
+/** Parses a design file: the design, and the images embedded with it (to store in the library). */
+export function parseDesignFile(text: string): { design: Design; images: EmbeddedImage[] } {
   let data: unknown
   try {
     data = JSON.parse(text)
@@ -77,12 +87,18 @@ export function parseDesign(text: string): Design {
     throw new DesignFileError('"customMaterials" is invalid')
   }
   if (!isRecord(data.settings)) throw new DesignFileError('"settings" is missing')
-  return migrateDesign(data)
+  const { embeddedImages, ...rest } = data
+  const images = embeddedImages === undefined ? [] : embeddedImages
+  if (!Array.isArray(images) || !images.every((i) => isRecord(i) && isString(i.id) && isString(i.type) && isString(i.data) && isNumber(i.width) && isNumber(i.height))) {
+    throw new DesignFileError('"embeddedImages" is invalid')
+  }
+  return { design: migrateDesign(rest), images: images as unknown as EmbeddedImage[] }
 }
 
-/** Downloads the design as a .json file. */
-export function downloadDesign(design: Design): void {
-  const url = URL.createObjectURL(new Blob([serialiseDesign(design)], { type: 'application/json' }))
+/** Downloads the design as a .json file, with the images it uses. */
+export async function downloadDesign(design: Design): Promise<void> {
+  const images = await embeddedImagesFor(design)
+  const url = URL.createObjectURL(new Blob([serialiseDesign(design, images)], { type: 'application/json' }))
   const link = document.createElement('a')
   link.href = url
   link.download = designFileName(design)

@@ -1,6 +1,6 @@
 import type { ThreeEvent } from '@react-three/fiber'
 import { useRef } from 'react'
-import { newRoom, rectFromDrag } from '../editor/roomTool'
+import { newRoom, newRoundRoom, rectFromDrag } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import { elevationOf, pointAtHeight } from './workPlane'
@@ -41,7 +41,8 @@ export function useRoomDrawing() {
     if (!rect) return
     const store = useDesignStore.getState()
     const floor = store.design.floors.find((f) => f.index === editor.activeFloor)
-    const id = store.addObject(newRoom(rect, editor.activeFloor, store.design.rooms, floor?.height))
+    const make = editor.roomShape === 'round' ? newRoundRoom : newRoom
+    const id = store.addObject(make(rect, editor.activeFloor, store.design.rooms, floor?.height))
     store.select(id)
   }
 

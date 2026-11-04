@@ -6,8 +6,9 @@
  * v2: rooms gained wallThickness and type. v3: openings gained style. v4: the central fish tank.
  * v5: materials — per-face wall materials, custom colours, connectors' toFloor; no 'fish-tank' pieces.
  * v6: lights, and the time of day in use (settings.timeOfDay drives the sun and sky).
+ * v7: round rooms (Room.shape) with screen panels, bookcase secret doors (hinge, open).
  */
-export const DESIGN_SCHEMA_VERSION = 6
+export const DESIGN_SCHEMA_VERSION = 7
 
 /** [x, y, z] in metres. y is up. */
 export type Vec3 = [number, number, number]
@@ -40,7 +41,7 @@ export interface Floor {
 /** North is the room's -z side, east its +x side. */
 export type WallSide = 'north' | 'east' | 'south' | 'west'
 
-export type OpeningStyle = 'single-door' | 'double-door' | 'window' | 'glass-wall'
+export type OpeningStyle = 'single-door' | 'double-door' | 'window' | 'glass-wall' | 'bookcase'
 
 /** A door or window cut into one of a room's walls. */
 export interface Opening {
@@ -58,13 +59,31 @@ export interface Opening {
   height: number
   /** Height of the opening's bottom edge above the floor, in metres (0 for doors). */
   sill: number
+  /**
+   * Bookcase secret doors: the side the bookcase swings on, seen from the room that owns the
+   * opening, and whether it stands open. Stored now so it can be animated later without a
+   * migration; drawn closed for now.
+   */
+  hinge?: 'left' | 'right'
+  open?: boolean
 }
 
 /**
  * One face of one of a room's walls: 'in' faces into the room, 'out' faces away from it. On a
  * wall shared by two rooms, each side is the inside face of the room it faces.
  */
-export type WallFace = `${WallSide}-${'in' | 'out'}`
+export type WallFace = `${WallSide}-${'in' | 'out'}` | 'curve-in' | 'curve-out'
+
+export type RoomShape = 'rectangular' | 'round'
+
+/**
+ * Floor-to-ceiling screen panels around a round room's wall: how many, and the image on each
+ * (an id in the image library — IndexedDB — never the image itself; null = blank).
+ */
+export interface RoomScreens {
+  count: number
+  images: (string | null)[]
+}
 
 /**
  * Material ids per surface; ids refer to the materials catalogue or the design's custom colours.
@@ -106,6 +125,14 @@ export interface Room extends Placed {
   wallThickness: number
   openings: Opening[]
   materials: RoomMaterials
+  /**
+   * v7. 'round': a circular room centred on position, its diameter size[0] (= size[2]); its one
+   * curved wall has an inside and an outside face ('curve-in' / 'curve-out'). Round rooms take
+   * no openings yet.
+   */
+  shape: RoomShape
+  /** Round rooms: screen panels around the wall (v7). */
+  screens?: RoomScreens
 }
 
 export type PieceType =

@@ -12,7 +12,7 @@ export interface PieceSpec {
   icon: string
 }
 
-export const PIECE_PALETTE = ['wall', 'floor-panel', 'dome', 'tube', 'platform', 'pillar', 'arch', 'ramp'] as const satisfies readonly PieceType[]
+export const PIECE_PALETTE = ['wall', 'floor-panel', 'dome', 'tube', 'platform', 'pillar', 'arch', 'ramp', 'bookcase-passage'] as const satisfies readonly PieceType[]
 export type PalettePiece = (typeof PIECE_PALETTE)[number]
 
 export const PIECES: Record<PalettePiece, PieceSpec> = {
@@ -24,6 +24,8 @@ export const PIECES: Record<PalettePiece, PieceSpec> = {
   pillar: { label: 'Pillar', size: [0.5, 3, 0.5], material: 'marble', icon: 'M8 3h8M8 21h8M10 3v18M14 3v18' },
   arch: { label: 'Arch', size: [3, 3.5, 0.4], material: 'warm-white', icon: 'M4 21V11a8 8 0 0 1 16 0v10M8 21V11a4 4 0 0 1 8 0v10' },
   ramp: { label: 'Ramp', size: [4, 1.5, 2], material: 'marble', icon: 'M3 19h18V7z' },
+  // A narrow corridor, open at both ends (along x), to run behind a bookcase secret door.
+  'bookcase-passage': { label: 'Hidden passage', size: [4, 2.4, 1.2], material: 'concrete', icon: 'M3 7h18M3 17h18M3 7v10M21 7v10M8 10h.01M12 10h.01M16 10h.01' },
 }
 
 /** Label for any piece type, including ones without a palette entry yet (stairs, slides…). */
