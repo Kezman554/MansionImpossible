@@ -55,6 +55,12 @@ export function parseDesign(text: string): Design {
   checkList(data, 'rooms', 'room')
   checkList(data, 'pieces', 'piece')
   checkList(data, 'furniture', 'furniture')
+  if (data.lights !== undefined) {
+    checkList(data, 'lights', 'light')
+    for (const [i, l] of (data.lights as Record<string, unknown>[]).entries()) {
+      if (!isString(l.color) || !/^#[0-9a-f]{6}$/i.test(l.color as string) || !isNumber(l.intensity)) throw new DesignFileError(`lights[${i}] is not a valid light`)
+    }
+  }
   const terrain = data.terrain
   if (!isRecord(terrain) || !Array.isArray(terrain.heights) || !terrain.heights.every(isNumber)) {
     throw new DesignFileError('"terrain" is missing or invalid')

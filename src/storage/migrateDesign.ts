@@ -4,6 +4,8 @@ import { DESIGN_SCHEMA_VERSION, type Design } from '../types/design'
 
 export const DEFAULT_WALL_THICKNESS = 0.2
 export const DEFAULT_ROOM_TYPE = 'Room'
+/** Midday: the sun high, the sky blue. */
+export const DEFAULT_TIME_OF_DAY = 12
 
 /** Oldest schema version this app can still open. */
 export const OLDEST_SUPPORTED_VERSION = 1
@@ -52,6 +54,13 @@ export function migrateDesign(design: Loose): Design {
       .filter((p) => p.type !== 'fish-tank')
       .map((p) => (CONNECTOR_TYPES.includes(p.type as never) && typeof p.toFloor !== 'number' ? { ...p, toFloor: p.floor } : p))
     current = { ...current, rooms, pieces, customMaterials: Array.isArray(current.customMaterials) ? current.customMaterials : [], version: 5 }
+  }
+
+  // v5 → v6: lights, and the time of day now drives the sun and sky. Designs open with no
+  // lights and the default time of day (the slider was disabled before v6, so nothing is lost).
+  if (current.version === 5) {
+    const settings = (current.settings as Loose | undefined) ?? {}
+    current = { ...current, lights: [], settings: { ...settings, timeOfDay: DEFAULT_TIME_OF_DAY }, version: 6 }
   }
 
   return current as unknown as Design

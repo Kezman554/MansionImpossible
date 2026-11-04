@@ -5,8 +5,9 @@
 /**
  * v2: rooms gained wallThickness and type. v3: openings gained style. v4: the central fish tank.
  * v5: materials — per-face wall materials, custom colours, connectors' toFloor; no 'fish-tank' pieces.
+ * v6: lights, and the time of day in use (settings.timeOfDay drives the sun and sky).
  */
-export const DESIGN_SCHEMA_VERSION = 5
+export const DESIGN_SCHEMA_VERSION = 6
 
 /** [x, y, z] in metres. y is up. */
 export type Vec3 = [number, number, number]
@@ -171,7 +172,29 @@ export interface FishTank {
   size: [number, number]
 }
 
-export type DesignObject = Room | Piece | Furniture
+export type LightType = 'ceiling' | 'lamp' | 'spot' | 'strip'
+
+/**
+ * A placed light. Position is the fixture's anchor relative to its floor: the base of a lamp,
+ * the mounting point of ceiling, spot and strip lights (just under the ceiling). A spotlight
+ * points down (-y) turned by its rotation; a strip runs along its local x.
+ */
+export interface Light extends Placed {
+  kind: 'light'
+  type: LightType
+  /** Light colour as #rrggbb (scene data, never a chrome token). */
+  color: string
+  /** Intensity in Three.js physically based units (candela; a lamp is about 4, the sun about 2 at noon). */
+  intensity: number
+  /** Strip lights: length in metres. Other types ignore it. */
+  length: number
+  /** Spotlights: cone half-angle in radians. Other types ignore it. */
+  angle: number
+  /** Asks to cast shadows. At most one light in a design has this; quality decides if it's honoured. */
+  castShadow: boolean
+}
+
+export type DesignObject = Room | Piece | Furniture | Light
 export type ObjectKind = DesignObject['kind']
 
 /** Heightmap terrain centred on the origin. */
@@ -188,7 +211,7 @@ export interface DesignSettings {
   /** Grid spacing for snapping, in metres. */
   gridSize: number
   snapToGrid: boolean
-  /** Time of day for the day/night cycle, 0–24 hours. */
+  /** Time of day for the day/night cycle, 0–24 hours: moves the sun and changes the sky (v6). */
   timeOfDay: number
 }
 
@@ -200,6 +223,8 @@ export interface Design {
   rooms: Room[]
   pieces: Piece[]
   furniture: Furniture[]
+  /** Placed lights (v6). */
+  lights: Light[]
   /** The central fish tank, or null when the design has none. */
   tank: FishTank | null
   /** Colours mixed with the custom colour picker, used by material id like catalogue materials (v5). */

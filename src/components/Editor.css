@@ -673,3 +673,45 @@
 .viewport--paint canvas {
   cursor: crosshair;
 }
+
+/* Light colours: chips carry scene colours from the lights catalogue (inline), never chrome tokens */
+.light-colours {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.light-colours__chip {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--ring-decorative);
+  cursor: pointer;
+}
+
+.light-colours__chip[aria-pressed='true'] {
+  box-shadow: var(--ring-selected);
+}
+
+.colour-input {
+  width: 32px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-input);
+  background: none;
+  cursor: pointer;
+}
+
+.inspector__check {
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.viewport--light canvas {
+  cursor: crosshair;
+}

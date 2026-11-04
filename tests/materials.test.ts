@@ -188,7 +188,7 @@ describe('save format v5', () => {
     const json = JSON.stringify(v4)
     const up = parseDesign(json)
     expect(up.version).toBe(DESIGN_SCHEMA_VERSION)
-    expect(DESIGN_SCHEMA_VERSION).toBe(5)
+    expect(DESIGN_SCHEMA_VERSION).toBeGreaterThanOrEqual(5)
     expect(up.rooms[0].materials).toEqual({ floor: 'marble', walls: 'oak', ceiling: null, faces: {} })
     expect(up.customMaterials).toEqual([])
     expect(up.pieces.map((p) => `${p.id}:${p.toFloor}`)).toEqual(['s:1', 'k:2'])

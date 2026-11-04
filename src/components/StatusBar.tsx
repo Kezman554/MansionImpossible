@@ -2,6 +2,7 @@ import type { RefObject } from 'react'
 import { roomRect, type Rect } from '../editor/roomTool'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
+import { setTimeOfDay } from '../editor/freeform/actions'
 import { plural } from './formatEdited'
 
 interface StatusBarProps {
@@ -33,9 +34,9 @@ export function StatusBar({ cursorRef }: StatusBarProps) {
         {floor?.name ?? 'Ground floor'} · {plural(floorRooms, 'room')}
       </span>
       {live && <span className="status-bar__live">Room {formatSize(live)}</span>}
-      <label className="status-bar__time" title="Day/night cycle — coming soon">
+      <label className="status-bar__time" title="Moves the sun and changes the sky; saved with the mansion">
         Time of day {formatHour(settings.timeOfDay)}
-        <input type="range" min={0} max={24} step={0.5} value={settings.timeOfDay} disabled readOnly />
+        <input type="range" aria-label="Time of day" min={0} max={24} step={0.25} value={settings.timeOfDay} onChange={(e) => setTimeOfDay(Number(e.target.value))} />
       </label>
     </footer>
   )

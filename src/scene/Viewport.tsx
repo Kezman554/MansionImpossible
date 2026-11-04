@@ -10,8 +10,8 @@ import { FpsProbe } from './FpsProbe'
 import { Ground } from './Ground'
 import { GroundGrid } from './GroundGrid'
 import { Lighting } from './Lighting'
+import { Lights } from './Lights'
 import { OpeningOverlay } from './OpeningOverlay'
-import { overlayTokens } from './overlayTokens'
 import { QUALITY_PRESETS } from './quality'
 import { elevationOf } from './workPlane'
 import { PieceGizmo } from './PieceGizmo'
@@ -45,6 +45,7 @@ function exposeForDev({ get }: RootState) {
 export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) {
   const preset = QUALITY_PRESETS[quality]
   const plotSize = useDesignStore((s) => s.design.terrain.size)
+  const timeOfDay = useDesignStore((s) => s.design.settings.timeOfDay)
   const tool = useEditorStore((s) => s.tool)
   const activeFloor = useEditorStore((s) => s.activeFloor)
   const elevation = useDesignStore((s) => elevationOf(s.design.floors, activeFloor))
@@ -64,14 +65,14 @@ export function Viewport({ quality, showFps, camera, onCursor }: ViewportProps) 
         camera={{ fov: 45, near: 0.1, far: 2000, position: camera.position.toArray() }}
         onCreated={onCreated}
       >
-        <color attach="background" args={[overlayTokens.ground]} />
-        <Lighting shadows={preset.shadows} plotSize={plotSize} />
+        <Lighting shadows={preset.shadows} plotSize={plotSize} timeOfDay={timeOfDay} />
         <Ground plotSize={plotSize} elevation={elevation} onCursor={onCursor} />
         <GroundGrid plotSize={plotSize} elevation={elevation} />
         <Rooms />
         <FishTank caustics={quality === 'high'} />
         <Pieces />
         <Connectors />
+        <Lights quality={preset} />
         <PieceGizmo />
         <RoomDraft />
         <SelectionOverlay />

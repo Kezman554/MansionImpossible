@@ -43,7 +43,7 @@ export function addFloor(design: Design, where: 'above' | 'below'): { design: De
 
 /** Counts what a floor holds, for the remove toast. */
 export function floorContents(design: Design, index: number): number {
-  return [...design.rooms, ...design.pieces, ...design.furniture].filter((o) => o.floor === index).length
+  return [...design.rooms, ...design.pieces, ...design.furniture, ...(design.lights ?? [])].filter((o) => o.floor === index).length
 }
 
 /**
@@ -75,6 +75,7 @@ export function removeFloor(design: Design, index: number): Design {
     rooms: keep(design.rooms),
     pieces,
     furniture: keep(design.furniture),
+    lights: keep(design.lights ?? []),
   })
 }
 

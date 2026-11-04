@@ -4,10 +4,11 @@ import type { Rect } from '../editor/roomTool'
 import type { PalettePiece } from '../editor/freeform/catalog'
 import type { ConnectorType } from '../editor/connectors/catalog'
 import { DEFAULT_CUSTOM_COLOUR } from '../editor/catalog/materials'
-import type { Opening, OpeningStyle, Piece } from '../types/design'
+import { DEFAULT_LIGHT_COLOUR } from '../editor/catalog/lights'
+import type { LightType, Opening, OpeningStyle, Piece } from '../types/design'
 import { useDesignStore } from './designStore'
 
-export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform' | 'connector' | 'tank' | 'paint'
+export type Tool = 'select' | 'room' | 'door' | 'window' | 'freeform' | 'connector' | 'tank' | 'paint' | 'light'
 export type GizmoMode = 'translate' | 'rotate' | 'scale'
 
 /** An opening on a room, by id. Openings live inside their room, so they're selected here, not in the design store. */
@@ -46,6 +47,11 @@ interface EditorState {
   paintMaterial: string
   /** The custom colour picker's current colour (#rrggbb). */
   customColour: string
+  /** Light the light tool places, and its colour (#rrggbb). */
+  lightType: LightType
+  lightColour: string
+  setLightType: (type: LightType) => void
+  setLightColour: (colour: string) => void
   setPaintMaterial: (id: string) => void
   setCustomColour: (colour: string) => void
   setTool: (tool: Tool) => void
@@ -81,6 +87,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   tankPreview: null,
   gizmoMode: 'translate',
   paintMaterial: 'marble',
+  lightType: 'ceiling',
+  lightColour: DEFAULT_LIGHT_COLOUR,
+  setLightType: (lightType) => set({ lightType, tool: 'light' }),
+  setLightColour: (lightColour) => set({ lightColour }),
   customColour: DEFAULT_CUSTOM_COLOUR,
   setPaintMaterial: (paintMaterial) => set({ paintMaterial, tool: 'paint' }),
   setCustomColour: (customColour) => set({ customColour }),

@@ -28,7 +28,7 @@ export interface EditOptions {
   record?: boolean
 }
 
-const COLLECTION = { room: 'rooms', piece: 'pieces', furniture: 'furniture' } as const satisfies Record<
+const COLLECTION = { room: 'rooms', piece: 'pieces', furniture: 'furniture', light: 'lights' } as const satisfies Record<
   ObjectKind,
   keyof Design
 >
@@ -47,6 +47,7 @@ export function createDesign(name: string): Design {
     rooms: [],
     pieces: [],
     furniture: [],
+    lights: [],
     tank: null,
     customMaterials: [],
     terrain: { size: [200, 200], resolution, heights: new Array<number>(resolution * resolution).fill(0) },
@@ -57,7 +58,12 @@ export function createDesign(name: string): Design {
 }
 
 export function findObject(design: Design, id: string): DesignObject | undefined {
-  return design.rooms.find((o) => o.id === id) ?? design.pieces.find((o) => o.id === id) ?? design.furniture.find((o) => o.id === id)
+  return (
+    design.rooms.find((o) => o.id === id) ??
+    design.pieces.find((o) => o.id === id) ??
+    design.furniture.find((o) => o.id === id) ??
+    (design.lights ?? []).find((o) => o.id === id)
+  )
 }
 
 /** True if the id names something selectable: an object, or the fish tank. */
@@ -153,6 +159,7 @@ export const useDesignStore = create<DesignState>()((set, get) => ({
         rooms: design.rooms.filter((o) => !remove.has(o.id)),
         pieces: design.pieces.filter((o) => !remove.has(o.id)),
         furniture: design.furniture.filter((o) => !remove.has(o.id)),
+        lights: (design.lights ?? []).filter((o) => !remove.has(o.id)),
       }
       return { ...edit(state, next), selection: state.selection.filter((id) => !remove.has(id)) }
     })

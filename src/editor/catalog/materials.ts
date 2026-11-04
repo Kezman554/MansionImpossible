@@ -14,7 +14,7 @@ export interface SceneMaterial {
   /** Base colour (#rrggbb); a texture's grey pattern is multiplied by it. */
   color: string
   roughness: number
-  /** Kept low: the scene has no environment map, so very metallic surfaces would render near black. */
+  /** Metals reflect the scene's generated environment map (src/scene/Environment.tsx). */
   metalness?: number
   /** Below 1 = see-through (glass). */
   opacity?: number
@@ -49,11 +49,11 @@ const ENTRIES: Record<string, Entry> = {
   'glass-frosted': { name: 'Frosted glass', category: 'glass', color: '#E4EEF0', roughness: 0.6, opacity: 0.6 },
   'aquarium-glass': { name: 'Aquarium glass', category: 'glass', color: '#39C6D6', roughness: 0.05, metalness: 0.1, opacity: 0.3 },
   // Metal
-  steel: { name: 'Brushed steel', category: 'metal', color: '#A3ACB1', roughness: 0.35, metalness: 0.3, texture: { kind: 'brushed', scale: 1 } },
-  chrome: { name: 'Chrome', category: 'metal', color: '#D5DADD', roughness: 0.2, metalness: 0.35 },
-  brass: { name: 'Brass', category: 'metal', color: '#C9A24A', roughness: 0.3, metalness: 0.35 },
-  gold: { name: 'Gold', category: 'metal', color: '#E3B53B', roughness: 0.25, metalness: 0.4 },
-  copper: { name: 'Copper', category: 'metal', color: '#C27A4E', roughness: 0.3, metalness: 0.35 },
+  steel: { name: 'Brushed steel', category: 'metal', color: '#A3ACB1', roughness: 0.35, metalness: 0.6, texture: { kind: 'brushed', scale: 1 } },
+  chrome: { name: 'Chrome', category: 'metal', color: '#D5DADD', roughness: 0.12, metalness: 0.9 },
+  brass: { name: 'Brass', category: 'metal', color: '#C9A24A', roughness: 0.3, metalness: 0.7 },
+  gold: { name: 'Gold', category: 'metal', color: '#E3B53B', roughness: 0.22, metalness: 0.9 },
+  copper: { name: 'Copper', category: 'metal', color: '#C27A4E', roughness: 0.3, metalness: 0.8 },
   // Concrete
   concrete: { name: 'Concrete', category: 'concrete', color: '#A8A6A0', roughness: 0.9, texture: { kind: 'concrete', scale: 2 } },
   'concrete-polished': { name: 'Polished concrete', category: 'concrete', color: '#BDBBB5', roughness: 0.45, texture: { kind: 'concrete', scale: 3 } },

@@ -182,8 +182,9 @@ export function SelectionInspector({ ids }: { ids: string[] }) {
   const design = useDesignStore((s) => s.design)
   const pieces = design.pieces.filter((p) => ids.includes(p.id))
   const rooms = design.rooms.filter((r) => ids.includes(r.id)).length
+  const lights = (design.lights ?? []).filter((l) => ids.includes(l.id)).length
   const tank = !!design.tank && ids.includes(design.tank.id)
-  const parts = [rooms && `${rooms} room${rooms === 1 ? '' : 's'}`, pieces.length && `${pieces.length} piece${pieces.length === 1 ? '' : 's'}`, tank && 'fish tank'].filter(Boolean)
+  const parts = [rooms && `${rooms} room${rooms === 1 ? '' : 's'}`, pieces.length && `${pieces.length} piece${pieces.length === 1 ? '' : 's'}`, lights && `${lights} light${lights === 1 ? '' : 's'}`, tank && 'fish tank'].filter(Boolean)
 
   return (
     <>
@@ -196,7 +197,7 @@ export function SelectionInspector({ ids }: { ids: string[] }) {
         )}
       </section>
       <div className="inspector__actions">
-        {pieces.length > 0 && (
+        {pieces.length + lights > 0 && (
           <button type="button" className="btn btn--small btn--on-raised" onClick={duplicateSelection} title="Duplicate (Ctrl+D)">
             Duplicate
           </button>

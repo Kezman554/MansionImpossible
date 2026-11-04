@@ -1,6 +1,7 @@
 import { useAppStore } from '../store/appStore'
 import { findObject, useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
+import { LIGHTS } from './catalog/lights'
 import { pieceLabel } from './freeform/catalog'
 import { OPENING_STYLES } from './openings'
 
@@ -31,5 +32,5 @@ export function deleteSelection(): void {
   if (count === 0) return
   store.removeObjects([...objects.map((o) => o.id), ...(tank ? [tank.id] : [])])
   const only = count === 1 ? objects[0] : null
-  offerUndo(count > 1 ? `${count} objects` : tank ? 'Fish tank' : !only ? 'Object' : 'name' in only ? only.name : only.kind === 'piece' ? pieceLabel(only.type) : 'Furniture')
+  offerUndo(count > 1 ? `${count} objects` : tank ? 'Fish tank' : !only ? 'Object' : 'name' in only ? only.name : only.kind === 'piece' ? pieceLabel(only.type) : only.kind === 'light' ? LIGHTS[only.type].label : 'Furniture')
 }

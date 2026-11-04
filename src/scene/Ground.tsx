@@ -2,6 +2,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useDesignStore } from '../store/designStore'
 import { useEditorStore } from '../store/editorStore'
 import { overlayTokens } from './overlayTokens'
+import { useLightPlacement } from './useLightPlacement'
 import { useTankPlacement } from './useTankPlacement'
 import { usePiecePlacement } from './usePiecePlacement'
 import { useRoomDrawing } from './useRoomDrawing'
@@ -24,6 +25,7 @@ export function Ground({ plotSize, elevation, onCursor }: GroundProps) {
   const drawing = useRoomDrawing()
   const piecePlacement = usePiecePlacement()
   const tankPlacement = useTankPlacement()
+  const lightPlacement = useLightPlacement()
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     onCursor(pointAtHeight(e.ray, elevation))
@@ -33,7 +35,7 @@ export function Ground({ plotSize, elevation, onCursor }: GroundProps) {
   }
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
-    if (gizmoHasPointer() || piecePlacement.onClick(e) || tankPlacement.onClick(e)) return
+    if (gizmoHasPointer() || piecePlacement.onClick(e) || tankPlacement.onClick(e) || lightPlacement.onClick(e)) return
     if (useEditorStore.getState().tool !== 'select' || e.delta > CLICK_TOLERANCE_PX) return
     useDesignStore.getState().clearSelection()
     useEditorStore.getState().selectOpening(null)
