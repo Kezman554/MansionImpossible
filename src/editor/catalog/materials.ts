@@ -74,6 +74,15 @@ const ENTRIES: Record<string, Entry> = {
   'slide-yellow': { name: 'Sunny plastic', category: 'plain', color: '#F2C14E', roughness: 0.4 },
   // The tank (DESIGN.md: its tint is the one deliberate crossover with the UI water token)
   water: { name: 'Tank water', category: 'water', color: '#39C6D6', roughness: 0.1, hidden: true },
+  // Fish (src/editor/catalog/fish.ts picks from these): instance tints on one flat-shaded material
+  'fish-neon-blue': { name: 'Neon blue fish', category: 'water', color: '#3FB7E8', roughness: 0.55, hidden: true },
+  'fish-red': { name: 'Red fish', category: 'water', color: '#E8473F', roughness: 0.55, hidden: true },
+  'fish-sky': { name: 'Sky fish', category: 'water', color: '#5ED3F0', roughness: 0.55, hidden: true },
+  'fish-pearl': { name: 'Pearl fish', category: 'water', color: '#F2E6C8', roughness: 0.55, hidden: true },
+  'fish-gold': { name: 'Gold fish', category: 'water', color: '#F2B33D', roughness: 0.55, hidden: true },
+  'fish-ink': { name: 'Ink fish', category: 'water', color: '#1F2A33', roughness: 0.55, hidden: true },
+  'fish-sand': { name: 'Sand fish', category: 'water', color: '#D9C27A', roughness: 0.55, hidden: true },
+  'fish-bronze': { name: 'Bronze fish', category: 'water', color: '#B98F5A', roughness: 0.55, hidden: true },
 }
 
 export const MATERIALS: Record<string, SceneMaterial> = Object.fromEntries(Object.entries(ENTRIES).map(([id, entry]) => [id, { id, ...entry }]))
