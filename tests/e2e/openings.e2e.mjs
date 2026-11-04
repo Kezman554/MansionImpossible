@@ -85,6 +85,7 @@ try {
     s.updateObject(s.addObject(newRoom({ x0: 8, z0: 0, x1: 12, z1: 6 }, 0, $S().design.rooms)), { name: 'Study' });
     s.clearSelection(); return true })`)
   await b.evaluate(`(() => { const t = $three(); t.controls.target.set(5, 0, 3); t.camera.position.set(3, 17, 17); t.controls.update(); return true })()`)
+  await b.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))') // frames drawn with the new camera
   await sleep(600)
 
   // 1. Place each style on a different wall by clicking the wall
@@ -93,6 +94,7 @@ try {
   check('D picks the door tool and shows the style tray', await b.evaluate(`!!document.querySelector('.tray') && document.querySelector('.tray__tile[aria-pressed=true]')?.textContent.trim() === 'Single door'`))
   await mouse('mouseMoved', await screen(2.33, 1.2, 0 + T)) // north wall, inner face
   await sleep(200)
+  await b.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))')
   check('hovering a wall previews the opening', await b.evaluate(`$E().openingPreview?.opening.wall === 'north'`))
   await clickAt(await screen(2.33, 1.2, 0 + T))
   await tile('Double door')

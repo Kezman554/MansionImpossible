@@ -76,7 +76,11 @@ const H2 = `
 const rig = () => b.evaluate('$rig()')
 const lights = () => b.evaluate('$lights()')
 const steps = () => b.evaluate('$S().past.length')
-const view = (tx, ty, tz, px, py, pz) => b.evaluate(`(() => { const t = $three(); t.controls.target.set(${tx}, ${ty}, ${tz}); t.camera.position.set(${px}, ${py}, ${pz}); t.controls.update(); return true })()`)
+/** Moves the camera, then waits for frames drawn with it (picking uses the last rendered camera). */
+const view = async (tx, ty, tz, px, py, pz) => {
+  await b.evaluate(`(() => { const t = $three(); t.controls.target.set(${tx}, ${ty}, ${tz}); t.camera.position.set(${px}, ${py}, ${pz}); t.controls.update(); return true })()`)
+  await b.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))')
+}
 const setQuality = async (label) => {
   await b.evaluate(`[...document.querySelectorAll('[aria-label="Quality"] button')].find((e) => e.textContent === ${JSON.stringify(label)}).click(), true`)
   await sleep(500)
@@ -224,7 +228,7 @@ try {
   await sleep(500)
   check('lights reload intact', (await b.evaluate('JSON.stringify({ lights: $S().design.lights, time: $S().design.settings.timeOfDay })')) === saved)
   check('the time of day survives the reload (22:00, sun off, night sky)', (await b.evaluate('$S().design.settings.timeOfDay')) === 22 && (await rig()).sun === 0 && (await b.evaluate(`document.querySelector('.status-bar__time')?.textContent ?? ''`)).includes('22:00'))
-  check('saved as v6', (await b.evaluate('$S().design.version')) === 6)
+  check('saved in the current save format (v6 or later)', (await b.evaluate('$S().design.version')) === (await b.evaluate(`import('/src/types/design.ts').then((m) => m.DESIGN_SCHEMA_VERSION)`)))
   await b.evaluate('$setTime(17.5)')
   await sleep(300)
   await view(0, 0, 0, 10, 14, 16)
@@ -247,7 +251,7 @@ try {
   await clickButton('Open Old v5 villa')
   await b.waitFor(`$S().design.name === 'Old v5 villa' && !!$three()?.controls`)
   const up = await b.evaluate('$S().design')
-  check('a v5 design opens upgraded to v6: no lights, the default time of day, its materials kept', up.version === 6 && Array.isArray(up.lights) && up.lights.length === 0 && up.settings.timeOfDay === 12 && up.rooms[0].materials.faces['north-in'] === 'gold', JSON.stringify({ v: up.version, lights: up.lights, t: up.settings.timeOfDay }))
+  check('a v5 design opens upgraded to the current format: no lights, the default time of day, its materials kept', up.version === (await b.evaluate(`import('/src/types/design.ts').then((m) => m.DESIGN_SCHEMA_VERSION)`)) && Array.isArray(up.lights) && up.lights.length === 0 && up.settings.timeOfDay === 12 && up.rooms[0].materials.faces['north-in'] === 'gold', JSON.stringify({ v: up.version, lights: up.lights, t: up.settings.timeOfDay }))
   await key('l')
   await view(0, 0, 0, 0, 14, 8)
   await sleep(300)
